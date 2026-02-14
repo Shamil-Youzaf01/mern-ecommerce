@@ -2,10 +2,10 @@
   "name": "orbit-ecommerce",
   "version": "1.0.0",
   "main": "backend/server.js",
-  "build": "npm install && npm install --prefix frontend && npm build --prefix frontend",
   "scripts": {
     "dev": "nodemon backend/server.js",
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "build": "npm install && npm install --prefix frontend && npm build --prefix frontend"
   },
   "keywords": [],
   "author": "",
