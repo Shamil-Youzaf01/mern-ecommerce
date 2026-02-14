@@ -19,21 +19,21 @@ const storeRefreshToken = async (userId, refreshToken) => {
     `refresh_token:${userId}`,
     refreshToken,
     "EX",
-    7 * 24 * 60 * 60
+    7 * 24 * 60 * 60,
   ); // 7days
 };
 
 const setCookies = (res, accessToken, refreshToken) => {
   res.cookie("accessToken", accessToken, {
-    httpOnly: true, // prevent XSS attacks, cross site scripting attack
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true, // prevent XSS attacks, cross site scripting attack
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
@@ -97,7 +97,7 @@ export const logout = async (req, res) => {
     if (refreshToken) {
       const decoded = jwt.verify(
         refreshToken,
-        process.env.REFRESH_TOKEN_SECRET
+        process.env.REFRESH_TOKEN_SECRET,
       );
       await redis.del(`refresh_token:${decoded.userId}`);
     }
@@ -130,13 +130,13 @@ export const refreshToken = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: decoded.userId },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 15 * 60 * 1000,
     });
 
