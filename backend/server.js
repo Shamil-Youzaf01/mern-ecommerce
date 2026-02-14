@@ -37,19 +37,6 @@ app.use("/api/coupon", couponRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/analytics", analyticsRoute);
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend", "dist")));
-
-  app.use((req, res, next) => {
-    if (req.method === "GET" && !req.path.startsWith("/api")) {
-      return res.sendFile(
-        path.join(__dirname, "frontend", "dist", "index.html"),
-      );
-    }
-    next();
-  });
-}
-
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT} `);
   connectDB();
