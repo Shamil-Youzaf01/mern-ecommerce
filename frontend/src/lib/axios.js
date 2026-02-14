@@ -3,9 +3,9 @@ import axios from "axios";
 const axiosInstance = axios.create({
   baseURL:
     import.meta.env.MODE === "development"
-      ? "https://mern-ecommerce-1-fflp.onrender.com"
-      : "/api",
-  withCredentials: true, //send cookies the server
+      ? "http://localhost:5000/api"
+      : "https://mern-ecommerce-2-6rpq.onrender.com",
+  withCredentials: true,
 });
 
 export default axiosInstance;

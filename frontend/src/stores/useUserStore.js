@@ -59,6 +59,16 @@ export const useUserStore = create((set, get) => ({
       set({ checkingAuth: false, user: null });
     }
   },
+
+  refreshToken: async () => {
+    try {
+      const response = await axios.post("/auth/refresh-token");
+      return response.data;
+    } catch (error) {
+      set({ user: null });
+      throw error;
+    }
+  },
 }));
 
 // Axios interceptor for token refresh
