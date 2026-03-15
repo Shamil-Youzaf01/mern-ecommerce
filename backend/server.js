@@ -97,7 +97,7 @@ const csrfMiddleware = csrf({
 });
 
 // CSRF token endpoint
-app.get("/api/csrf-token", csrfMiddleware, (req, res) => {
+app.get("/csrf-token", csrfMiddleware, (req, res) => {
   res.json({ csrfToken: req.csrfToken?.() || "" });
 });
 
