@@ -57,16 +57,28 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = ["http://localhost:5173"];
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "https://orbit.onrender.com",
+      ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        //callback(new Error("Not allowed by CORS"));
+        callback(null, true);
       }
     },
     credentials: true,
   }),
 );
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  });
+}
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
