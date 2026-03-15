@@ -24,9 +24,10 @@ export const useCartStore = create((set, get) => ({
       get().calculateTotals();
       toast.success("Coupon applied successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to apply coupon");
+      toast.error(error.response?.data?.message || "Coupon not found");
     }
   },
+
   removeCoupon: () => {
     set({ isCouponApplied: false });
     get().calculateTotals();

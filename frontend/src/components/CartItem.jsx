@@ -4,60 +4,70 @@ import { useCartStore } from "../stores/useCartStore";
 const CartItem = ({ item }) => {
   const { removeFromCart, updateQuantity } = useCartStore();
 
+  const decreaseQty = () => {
+    if (item.quantity > 1) {
+      updateQuantity(item._id, item.quantity - 1);
+    }
+  };
+
+  const increaseQty = () => {
+    updateQuantity(item._id, item.quantity + 1);
+  };
+
+  const total = item.price * item.quantity;
+
   return (
-    <div className="rounded-lg border p-4 shadow-sm border-gray-700 bg-gray-800 md:p-6">
-      <div className="space-y-4 md:flex md:items-center md:justify-between md:gap-6 md:space-y-0">
-        <div className="shrink-0 md:order-1">
-          <img className="h-20 md:h-32 rounded object-cover" src={item.image} />
-        </div>
-        <label className="sr-only">Choose quantity:</label>
+    <div className="flex gap-4 p-4 bg-gray-800 border border-gray-700 rounded-xl shadow-sm hover:shadow-md transition">
+      <div className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0">
+        <img
+          src={item.images?.[0] || item.image}
+          alt={item.name}
+          className="w-full h-full object-cover rounded-lg"
+        />
+      </div>
 
-        <div className="flex items-center justify-between md:order-3 md:justify-end">
-          <div className="flex items-center gap-2">
-            <button
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border
-                             border-gray-600 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2
-                              focus:ring-emerald-500"
-              onClick={() => updateQuantity(item._id, item.quantity - 1)}
-            >
-              <Minus className="text-gray-300" />
-            </button>
-            <p>{item.quantity}</p>
-            <button
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border
-                             border-gray-600 bg-gray-700 hover:bg-gray-600 focus:outline-none 
-                        focus:ring-2 focus:ring-emerald-500"
-              onClick={() => updateQuantity(item._id, item.quantity + 1)}
-            >
-              <Plus className="text-gray-300" />
-            </button>
-          </div>
-
-          <div className="text-end md:order-4 md:w-32">
-            <p className="text-base font-bold text-emerald-400">
-              ₹{item.price}
-            </p>
-          </div>
-        </div>
-
-        <div className="w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md">
-          <p className="text-base font-medium text-white hover:text-emerald-400 hover:underline">
+      <div className="flex flex-col flex-1 justify-between">
+        <div className="flex justify-between items-start">
+          <h3 className="text-sm md:text-base font-semibold text-white hover:text-emerald-400 cursor-pointer">
             {item.name}
-          </p>
-          <p className="text-sm text-gray-400">{item.description}</p>
+          </h3>
 
-          <div className="flex items-center gap-4">
+          <button
+            onClick={() => removeFromCart(item._id)}
+            className="text-red-400 hover:text-red-300 transition"
+          >
+            <Trash size={18} />
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-400">₹{item.price} each</p>
+
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center bg-gray-700 rounded-lg overflow-hidden">
             <button
-              className="inline-flex items-center text-sm font-medium text-red-400
-                             hover:text-red-300 hover:underline"
-              onClick={() => removeFromCart(item._id)}
+              onClick={decreaseQty}
+              className="px-3 py-1 hover:bg-gray-600 transition"
             >
-              <Trash />
+              <Minus size={16} />
+            </button>
+
+            <span className="px-4 text-sm font-medium">{item.quantity}</span>
+
+            <button
+              onClick={increaseQty}
+              className="px-3 py-1 hover:bg-gray-600 transition"
+            >
+              <Plus size={16} />
             </button>
           </div>
+
+          <p className="text-emerald-400 font-bold text-sm md:text-base">
+            ₹{total}
+          </p>
         </div>
       </div>
     </div>
   );
 };
+
 export default CartItem;

@@ -4,8 +4,13 @@ import { toast } from "react-hot-toast";
 
 export const useUserStore = create((set, get) => ({
   user: null,
+  users: [], // For admin - all users
   loading: false,
+  usersLoading: false, // Separate loading for users list
   checkingAuth: true,
+  currentPage: 1,
+  totalPages: 1,
+  totalResults: 0,
 
   signup: async ({ name, email, password, confirmPassword }) => {
     set({ loading: true });
@@ -62,11 +67,88 @@ export const useUserStore = create((set, get) => ({
 
   refreshToken: async () => {
     try {
-      const response = await axios.post("/auth/refresh-token");
+      const response = await axios.post("auth/refresh-token");
       return response.data;
     } catch (error) {
       set({ user: null });
       throw error;
+    }
+  },
+
+  // ===== ADMIN FUNCTIONS =====
+
+  fetchAllUsers: async (page = 1, limit = 10) => {
+    set({ usersLoading: true });
+    try {
+      const response = await axios.get(`/auth/all?page=${page}&limit=${limit}`);
+      set({
+        users: response.data.users,
+        usersLoading: false,
+        currentPage: response.data.currentPage,
+        totalPages: response.data.totalPages,
+        totalResults: response.data.totalResults,
+      });
+    } catch (error) {
+      set({ usersLoading: false });
+      toast.error("Failed to fetch users");
+    }
+  },
+
+  deleteUser: async (userId) => {
+    set({ usersLoading: true });
+    try {
+      await axios.delete(`/auth/${userId}`);
+      set((state) => ({
+        users: state.users.filter((u) => u._id !== userId),
+        usersLoading: false,
+      }));
+      toast.success("User deleted");
+    } catch (error) {
+      set({ usersLoading: false });
+      toast.error("Failed to delete user");
+    }
+  },
+
+  createAdmin: async (adminData) => {
+    set({ loading: true });
+    try {
+      const response = await axios.post("/auth", adminData);
+      set((state) => ({
+        users: [...state.users, response.data],
+        loading: false,
+      }));
+      toast.success("Admin created successfully");
+    } catch (error) {
+      set({ loading: false });
+      toast.error(error.response?.data?.message || "Failed to create admin");
+    }
+  },
+
+  // ===== UPDATE ADDRESS =====
+
+  updateAddress: async (addressData) => {
+    set({ loading: true });
+    try {
+      const response = await axios.put("/auth/address", addressData);
+      set({ user: response.data, loading: false });
+      toast.success("Address saved successfully");
+    } catch (error) {
+      set({ loading: false });
+      toast.error(error.response?.data?.message || "Failed to save address");
+    }
+  },
+
+  // ===== DELETE ADDRESS =====
+
+  deleteAddress: async () => {
+    set({ loading: true });
+    try {
+      const response = await axios.delete("/auth/address");
+      set({ user: response.data, loading: false });
+      toast.success("Address deleted successfully");
+    } catch (error) {
+      set({ loading: false });
+      toast.error(error.response?.data?.message || "Failed to delete address");
     }
   },
 }));
@@ -78,28 +160,30 @@ axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("refresh-token")
+    ) {
       originalRequest._retry = true;
 
       try {
-        // If a refresh is already in progress, wait for it to complete
         if (refreshPromise) {
           await refreshPromise;
           return axios(originalRequest);
         }
 
-        // Start a new refresh process
         refreshPromise = useUserStore.getState().refreshToken();
         await refreshPromise;
         refreshPromise = null;
-
         return axios(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, redirect to login or handle as needed
         useUserStore.getState().logout();
         return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   },
 );

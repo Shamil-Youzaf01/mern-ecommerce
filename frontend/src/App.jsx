@@ -4,21 +4,37 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import CategoryPage from "./pages/CategoryPage";
-
+import SearchPage from "./pages/SearchPage";
 import Navbar from "./components/Navbar";
 import { Toaster } from "react-hot-toast";
 import { useUserStore } from "./stores/useUserStore";
 import { useEffect } from "react";
 import LoadingSpinner from "./components/LoadingSpinner";
 import CartPage from "./pages/CartPage";
+import UserProfilePage from "./pages/UserProfilePage";
 import { useCartStore } from "./stores/useCartStore";
 import PurchaseSuccessPage from "./pages/PurchaseSuccess";
 import PurchaseCancelPage from "./pages/PurchaseCancel";
+import ProductPage from "./pages/ProductPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import axios from "./lib/axios";
 
 function App() {
   const { user, checkAuth, checkingAuth } = useUserStore();
-  const CheckingAuth = false;
   const { getCartItems } = useCartStore();
+
+  // Fetch CSRF token on app load
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        await axios.get("/csrf-token");
+      } catch (error) {
+        console.error("Failed to fetch CSRF token:", error);
+      }
+    };
+    fetchCsrfToken();
+  }, []);
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -37,10 +53,11 @@ function App() {
         </div>
       </div>
 
-      <div className="relative z-50 pt-20">
+      <div className="relative z-50 pt-14">
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route
             path="/signup"
             element={!user ? <SignUpPage /> : <Navigate to="/" />}
@@ -52,7 +69,11 @@ function App() {
           <Route
             path="/secret-dashboard"
             element={
-              user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />
+              user?.role === "admin" || user?.role === "superadmin" ? (
+                <AdminPage />
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
           <Route path="/category/:category" element={<CategoryPage />} />
@@ -60,8 +81,14 @@ function App() {
             path="/cart"
             element={user ? <CartPage /> : <Navigate to="/login" />}
           />
+          <Route
+            path="/profile"
+            element={user ? <UserProfilePage /> : <Navigate to="/login" />}
+          />
+          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/success" element={<PurchaseSuccessPage />} />
           <Route path="/cancel" element={<PurchaseCancelPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
       <Toaster />

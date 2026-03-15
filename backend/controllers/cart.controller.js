@@ -7,7 +7,6 @@ export const getCartProducts = async (req, res) => {
       _id: { $in: req.user.cart.map((item) => item.productId) },
     });
 
-    // add quantity for each product
     const cartItems = products.map((product) => {
       const item = req.user.cart.find(
         (cartItem) => cartItem.productId.toString() === product._id.toString(),
@@ -47,10 +46,8 @@ export const removeAllFromCart = async (req, res) => {
     const { productId } = req.body || {};
 
     if (!productId) {
-      // Clear entire cart using findByIdAndUpdate to avoid version conflicts
       await User.findByIdAndUpdate(req.user._id, { cart: [] });
     } else {
-      // Remove specific item using $pull
       await User.findByIdAndUpdate(req.user._id, {
         $pull: { cart: { productId: productId } },
       });

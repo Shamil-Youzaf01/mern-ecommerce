@@ -1,11 +1,33 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const axiosInstance = axios.create({
-  baseURL:
-    import.meta.env.MODE === "development"
-      ? "http://localhost:5000/api"
-      : "https://mern-ecommerce-2-6rpq.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   withCredentials: true,
 });
+
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const csrfToken = Cookies.get("XSRF-TOKEN");
+
+    const safeMethods = ["GET", "HEAD", "OPTIONS"];
+    if (csrfToken && !safeMethods.includes(config.method?.toUpperCase())) {
+      config.headers["X-XSRF-TOKEN"] = csrfToken;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403) {
+      console.error("CSRF validation failed. Please refresh the page.");
+    }
+    return Promise.reject(error);
+  },
+);
 
 export default axiosInstance;

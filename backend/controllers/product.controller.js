@@ -4,8 +4,22 @@ import Product from "../models/product.model.js";
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}); //find all products
-    res.json({ products });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const products = await Product.find({})
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    const count = await Product.countDocuments({});
+
+    res.json({
+      products,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      totalResults: count,
+    });
   } catch (error) {
     console.log("Error in getAllProducts controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -19,14 +33,12 @@ export const getFeaturedProducts = async (req, res) => {
     if (featuredProducts) {
       return res.json(JSON.parse(featuredProducts));
     }
-    //if not in redis, fetch from mongDB
-    featuredProducts = await Product.find({ isFeatured: true }).lean(); //.lean() return plain JS Object instead of a mongoDB document. Good for performance
+    featuredProducts = await Product.find({ isFeatured: true }).lean();
 
     if (!featuredProducts) {
       return res.status(404).json({ message: "No featured products found" });
     }
 
-    //Store in redis for future
     await redis.set("featured_products", JSON.stringify(featuredProducts));
     res.json(featuredProducts);
   } catch (error) {
@@ -37,25 +49,28 @@ export const getFeaturedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "Image is required" });
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      images = req.files.map((file) => file.path);
     }
-    const { name, description, price, category } = req.body;
 
-    const image = req.file?.path;
+    if (!images.length && req.body.images) {
+      try {
+        images = JSON.parse(req.body.images);
+      } catch {
+        images = [req.body.images];
+      }
+    }
 
-    const product = await Product.create({
-      name,
-      description,
-      price,
-      image,
-      category,
-    });
+    const productData = {
+      ...req.body,
+      images: images.length > 0 ? images : undefined,
+    };
 
+    const product = await Product.create(productData);
     res.status(201).json(product);
   } catch (error) {
-    console.log("Error in createProduct controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -66,13 +81,14 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ message: "product not found" });
     }
 
-    if (product.image) {
-      const publicId = product.image.split("/").pop().split(".")[0];
-      try {
-        await cloudinary.uploader.destroy(`products/${publicId}`);
-        console.log("Deleted image from cloudinary");
-      } catch (error) {
-        console.log("Error deleting image from cloudinary", error.message);
+    if (product.images) {
+      for (const imageUrl of product.images) {
+        const publicId = imageUrl.split("/").pop().split(".")[0];
+        try {
+          await cloudinary.uploader.destroy(`products/${publicId}`);
+        } catch (error) {
+          console.log("Error deleting image from cloudinary", error.message);
+        }
       }
     }
 
@@ -95,7 +111,7 @@ export const getRecommendedProducts = async (req, res) => {
           _id: 1,
           name: 1,
           description: 1,
-          image: 1,
+          images: 1,
           price: 1,
         },
       },
@@ -113,9 +129,23 @@ export const getRecommendedProducts = async (req, res) => {
 
 export const getProductsByCategory = async (req, res) => {
   const { category } = req.params;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 12;
+
   try {
-    const products = await Product.find({ category });
-    res.json({ products });
+    const products = await Product.find({ category })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    const count = await Product.countDocuments({ category });
+
+    res.json({
+      products,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      totalResults: count,
+    });
   } catch (error) {
     console.log("Error in getProductsByCategory controller");
     res.status(500).json({ message: "Server error", error: error.message });
@@ -150,3 +180,87 @@ async function updateFeaturedProductsCache() {
     );
   }
 }
+
+export const searchProducts = async (req, res) => {
+  try {
+    const {
+      q,
+      category,
+      minPrice,
+      maxPrice,
+      sort = "newest",
+      page = 1,
+      limit = 12,
+    } = req.query;
+
+    let baseQuery = {};
+    if (q && q.trim()) {
+      const keyword = q.trim().slice(0, 50);
+      baseQuery.$or = [
+        { name: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+        { category: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    const filterQuery = {};
+    if (category) filterQuery.category = category;
+    if (minPrice)
+      filterQuery.price = { ...filterQuery.price, $gte: Number(minPrice) };
+    if (maxPrice)
+      filterQuery.price = { ...filterQuery.price, $lte: Number(maxPrice) };
+
+    const finalQuery = { $and: [baseQuery, filterQuery] };
+
+    const sortMap = {
+      newest: { createdAt: -1 },
+      price_asc: { price: 1 },
+      price_desc: { price: -1 },
+      name_asc: { name: 1 },
+    };
+    const sortOptions = sortMap[sort] || sortMap.newest;
+
+    const products = await Product.find(finalQuery)
+      .sort(sortOptions)
+      .skip((page - 1) * Number(limit))
+      .limit(Number(limit))
+      .lean();
+
+    const count = await Product.countDocuments(finalQuery);
+
+    res.json({
+      products,
+      totalPages: Math.ceil(count / limit),
+      currentPage: Number(page),
+      totalResults: count,
+      filters: { category, minPrice, maxPrice },
+      sort,
+    });
+  } catch (error) {
+    console.log("Error in searchProducts controller", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getProductById = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

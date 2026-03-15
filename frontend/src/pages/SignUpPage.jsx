@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { UserPlus, Mail, Lock, User, ArrowRight, Loader } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
+import GoogleLoginButton from "../components/GoogleLogin";
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -173,6 +174,10 @@ const SignUpPage = () => {
               )}
             </button>
           </form>
+
+          <div className="mt-4">
+            <GoogleLoginButton />
+          </div>
 
           <p className="mt-8 text-center text-sm text-gray-400">
             Already have an account?{" "}

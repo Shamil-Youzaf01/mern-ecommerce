@@ -13,17 +13,42 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: false,
       minlength: [6, "Password must be 6 characters long"],
     },
-    role: { type: String, enum: ["customer", "admin"], default: "customer" },
+    googleId: {
+      type: String,
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    role: {
+      type: String,
+      enum: ["customer", "admin", "superadmin"],
+      default: "customer",
+    },
     cart: [
       {
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
         quantity: { type: Number, default: 1 },
       },
     ],
+    address: {
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      zipCode: { type: String },
+      country: { type: String, default: "India" },
+      phone: { type: String },
+    },
   },
+
   { timestamps: true },
 );
 
@@ -39,7 +64,6 @@ userSchema.pre("save", async function () {
   }
 });
 
-//password compare
 userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };

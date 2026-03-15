@@ -12,7 +12,6 @@ export const createRazorpayOrder = async (req, res) => {
       return res.status(400).json({ error: "Invalid products" });
     }
 
-    // Calculate original amount (before any discount)
     let originalAmount = 0;
     products.forEach((p) => {
       originalAmount += (p.price || 0) * (p.quantity || 1);
@@ -52,8 +51,8 @@ export const createRazorpayOrder = async (req, res) => {
         quantity: p.quantity || 1,
         price: p.price || 0,
       })),
-      totalAmount, // final amount Razorpay will charge
-      originalAmount, // important for coupon generation
+      totalAmount,
+      originalAmount,
       couponCode: couponCode || null,
       couponDiscount,
       couponApplied: !!couponCode,
@@ -83,38 +82,22 @@ export const verifyRazorpayPayment = async (req, res) => {
       orderId,
     } = req.body;
 
-    console.log("=== DEBUG SIGNATURE ===");
-    console.log("razorpay_order_id:", razorpay_order_id);
-    console.log("razorpay_payment_id:", razorpay_payment_id);
-    console.log("razorpay_signature (from frontend):", razorpay_signature);
-    console.log(
-      "RAZORPAY_KEY_SECRET exists:",
-      !!process.env.RAZORPAY_KEY_SECRET,
-    );
-
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res
         .status(400)
         .json({ message: "Invalid payment data - null values received" });
     }
 
-    // Verify the payment signature
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(sign.toString())
       .digest("hex");
 
-    console.log("sign string:", sign);
-    console.log("expectedSign (calculated):", expectedSign);
-    console.log("Match:", razorpay_signature === expectedSign);
-
     if (razorpay_signature !== expectedSign) {
       return res.status(400).json({ message: "Invalid signature" });
     }
 
-    // Find and update order
-    // Update order
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
@@ -125,7 +108,6 @@ export const verifyRazorpayPayment = async (req, res) => {
     order.razorpaySignature = razorpay_signature;
     await order.save();
 
-    // === Mark coupon as inactive after successful payment ===
     if (order.couponCode) {
       await Coupon.findOneAndUpdate(
         { code: order.couponCode, userId: order.user },
@@ -133,7 +115,6 @@ export const verifyRazorpayPayment = async (req, res) => {
       );
     }
 
-    // === Generate new coupon ONLY if purchase >= ₹200 AND user has no active coupon left ===
     const originalAmount =
       order.originalAmount ||
       order.products.reduce((sum, item) => sum + item.price * item.quantity, 0);

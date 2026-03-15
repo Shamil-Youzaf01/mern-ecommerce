@@ -67,7 +67,7 @@ const GiftCouponCard = () => {
       </div>
 
       {/* === YOUR GIFT COUPON (with direct Apply button) === */}
-      {coupon && !isCouponApplied && (
+      {coupon && coupon.code && !isCouponApplied && (
         <div className="mt-4 p-4 bg-gray-900 rounded-lg border border-gray-700">
           <h3 className="text-lg font-medium text-gray-300">
             Your Available Coupon

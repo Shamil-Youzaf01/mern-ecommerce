@@ -15,9 +15,9 @@ const productSchema = new mongoose.Schema(
       min: 0,
       required: true,
     },
-    image: {
-      type: String,
-      required: [true, "Image is required"],
+    images: {
+      type: [String],
+      required: [true, "At least one image is required"],
     },
     category: {
       type: String,
@@ -28,8 +28,10 @@ const productSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+productSchema.index({ name: "text", description: "text", category: "text" });
 
 const Product = mongoose.model("Product", productSchema);
 

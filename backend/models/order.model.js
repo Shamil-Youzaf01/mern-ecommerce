@@ -34,9 +34,10 @@ const orderSchema = new mongoose.Schema(
     originalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "paid", "failed"],
+      enum: ["pending", "paid", "shipped", "delivered", "cancelled", "failed"],
       default: "pending",
     },
+
     couponApplied: {
       type: Boolean,
       default: false,

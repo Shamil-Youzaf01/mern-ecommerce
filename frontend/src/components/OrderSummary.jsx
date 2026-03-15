@@ -1,16 +1,20 @@
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "../stores/useCartStore";
 import { useUserStore } from "../stores/useUserStore";
 import { Link } from "react-router-dom";
-import { MoveRight } from "lucide-react";
+import { MoveRight, MapPin, Edit, Plus, Trash2 } from "lucide-react";
 import axios from "../lib/axios";
+import ShippingAddressForm from "./ShippingAddressForm";
 
 const OrderSummary = () => {
   const { total, subtotal, coupon, isCouponApplied, cart, clearCart } =
     useCartStore();
-  const { user } = useUserStore();
+  const { user, updateAddress, deleteAddress } = useUserStore();
+
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const savedAddress = user?.address;
 
   const savings = (subtotal || 0) - (total || 0);
   const formattedSubtotal = (subtotal || 0).toFixed(2);
@@ -45,7 +49,26 @@ const OrderSummary = () => {
     });
   };
 
+  const handleAddressSubmit = async (addressData) => {
+    await updateAddress(addressData);
+    setShowAddressForm(false);
+  };
+
+  const handleDeleteAddress = async () => {
+    if (window.confirm("Are you sure you want to delete your address?")) {
+      await deleteAddress();
+    }
+  };
+
+  // Check if user has address
+  const hasAddress = savedAddress && savedAddress.street;
+
   const handlePayment = async () => {
+    // Check if address is required
+    if (!hasAddress) {
+      setShowAddressForm(true);
+      return;
+    }
     try {
       if (coupon) {
         useCartStore.setState({ coupon: null, isCouponApplied: false });
@@ -130,73 +153,142 @@ const OrderSummary = () => {
   };
 
   return (
-    <motion.div
-      className="space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <p className="text-xl font-semibold text-emerald-400">Order summary</p>
+    <div className="space-y-6">
+      {/* Address Section - Separate Card */}
+      <motion.div
+        className="rounded-xl border border-gray-700 bg-gray-800 p-5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-5 h-5 text-emerald-400" />
+          <h3 className="text-lg font-semibold text-white">Shipping Address</h3>
+        </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <dl className="flex items-center justify-between gap-4">
-            <dt className="text-base font-normal text-gray-300">
-              Original price
-            </dt>
-            <dd className="text-base font-medium text-white">
-              ₹{formattedSubtotal}
-            </dd>
-          </dl>
+        {showAddressForm ? (
+          <ShippingAddressForm
+            initialData={savedAddress}
+            onSubmit={handleAddressSubmit}
+            onCancel={() => setShowAddressForm(false)}
+          />
+        ) : (
+          <div className="min-h-[100px]">
+            {hasAddress ? (
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <p className="text-white font-medium">
+                    {savedAddress.street}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    {savedAddress.city}, {savedAddress.state} -{" "}
+                    {savedAddress.zipCode}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    📞 {savedAddress.phone}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressForm(true)}
+                    className="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAddress}
+                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAddressForm(true)}
+                className="w-full py-4 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-emerald-500 hover:text-emerald-400 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus size={20} />
+                <span>Add Shipping Address</span>
+              </button>
+            )}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Order Summary - Separate Card */}
+      <motion.div
+        className="rounded-xl border border-gray-700 bg-gray-800 p-5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <h3 className="text-lg font-semibold text-emerald-400 mb-4">
+          Order Summary
+        </h3>
+
+        <div className="space-y-3">
+          <div className="flex justify-between text-gray-300">
+            <span>Subtotal</span>
+            <span>₹{formattedSubtotal}</span>
+          </div>
 
           {savings > 0 && (
-            <dl className="flex items-center justify-between gap-4">
-              <dt className="text-base font-normal text-gray-300">Savings</dt>
-              <dd className="text-base font-medium text-emerald-400">
-                -₹{formattedSavings}
-              </dd>
-            </dl>
+            <div className="flex justify-between text-emerald-400">
+              <span>Savings</span>
+              <span>-₹{formattedSavings}</span>
+            </div>
           )}
 
           {coupon && isCouponApplied && (
-            <dl className="flex items-center justify-between gap-4">
-              <dt className="text-base font-normal text-gray-300">
-                Coupon ({coupon.code})
-              </dt>
-              <dd className="text-base font-medium text-emerald-400">
-                -{discountPercentage}% off
-              </dd>
-            </dl>
+            <div className="flex justify-between text-emerald-400 items-center">
+              <div className="flex items-center gap-2">
+                <span>Coupon</span>
+                <span className="text-xs bg-emerald-600 px-2 py-0.5 rounded">
+                  {coupon.code}
+                </span>
+              </div>
+              <span>-{discountPercentage}%</span>
+            </div>
           )}
-          <dl className="flex items-center justify-between gap-4 border-t border-gray-600 pt-2">
-            <dt className="text-base font-bold text-white">Total</dt>
-            <dd className="text-base font-bold text-emerald-400">
+
+          <div className="border-t border-gray-600 pt-3 flex justify-between">
+            <span className="text-white font-bold">Total</span>
+            <span className="text-emerald-400 font-bold text-xl">
               ₹{formattedTotal}
-            </dd>
-          </dl>
+            </span>
+          </div>
         </div>
 
         <motion.button
-          className="flex w-full items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          className={`w-full mt-6 py-3 rounded-lg font-medium transition-colors ${
+            hasAddress
+              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+              : "bg-gray-600 text-gray-300 cursor-not-allowed"
+          }`}
+          whileHover={hasAddress ? { scale: 1.02 } : {}}
+          whileTap={hasAddress ? { scale: 0.98 } : {}}
           onClick={handlePayment}
+          disabled={!hasAddress}
         >
-          Proceed to Checkout
+          {hasAddress ? "Proceed to Checkout" : "Add Address to Continue"}
         </motion.button>
 
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-normal text-gray-400">or</span>
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <span className="text-sm text-gray-400">or</span>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-400 underline hover:text-emerald-300 hover:no-underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-emerald-400 hover:text-emerald-300"
           >
             Continue Shopping
             <MoveRight size={16} />
           </Link>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
 
