@@ -110,7 +110,7 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Correct for Render /src/frontend/dist
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Correct for /opt/render/project/src/frontend/dist
   // Debug: Log if dist exists and its contents
   if (fs.existsSync(frontendPath)) {
     console.log(
