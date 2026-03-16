@@ -110,7 +110,7 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Fixed for Render /src structure
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Correct for Render /src/frontend/dist
   // Debug: Log if dist exists and its contents
   if (fs.existsSync(frontendPath)) {
     console.log(
@@ -134,7 +134,12 @@ if (process.env.NODE_ENV === "production") {
 
   // Catch-all for SPA routing (fixed to '*' string)
   app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+    res.sendFile(path.join(frontendPath, "index.html"), (err) => {
+      if (err) {
+        console.error("Error sending index.html:", err);
+        res.status(500).send("Server Error");
+      }
+    });
   });
 }
 
