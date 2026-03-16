@@ -1,9 +1,9 @@
 import multer from "multer";
 import cloudinary from "./cloudinary.js";
 
-// multer-storage-cloudinary ESM compatibility fix
-import * as multerCloudinary from "multer-storage-cloudinary";
-const { CloudinaryStorage } = multerCloudinary;
+// Try default import for ESM compatibility
+import CloudinaryStorageLib from "multer-storage-cloudinary";
+const CloudinaryStorage = CloudinaryStorageLib;
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
