@@ -59,7 +59,7 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         "http://localhost:5173",
-        // "https://orbit-frontend-zlee.onrender.com",
+        "https://orbit-ecom.onrender.com",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -84,14 +84,14 @@ const csrfMiddleware = csrf({
     key: "XSRF-TOKEN",
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict", // strict for same-domain security
+    sameSite: "none",
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });
 
 // CSRF token endpoint
 app.get("/csrf-token", csrfMiddleware, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+  res.json({ csrfToken: req.csrfToken?.() || "" });
 });
 
 // Mount auth WITHOUT CSRF
@@ -109,7 +109,7 @@ app.use("/payments", paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "/frontend/dist")));
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
   app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, "/frontend/dist/index.html"));
   });
