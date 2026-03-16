@@ -44,7 +44,7 @@ export const useProductStore = create((set) => ({
   },
 
   fetchProductsByCategory: async (category, page = 1, limit = 12) => {
-    set({ loading: true });
+    set({ products: [], loading: true });
     try {
       const response = await axios.get(
         `/products/category/${category}?page=${page}&limit=${limit}`,
