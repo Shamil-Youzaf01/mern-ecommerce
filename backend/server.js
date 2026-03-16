@@ -59,7 +59,7 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         "http://localhost:5173",
-        "https://orbit-frontend-zlee.onrender.com",
+        // "https://orbit-frontend-zlee.onrender.com",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -78,25 +78,29 @@ app.use(cookieParser());
 // Static files
 app.use("/uploads", express.static("uploads"));
 
+// FIXED CSRF for same-domain deployment
 const csrfMiddleware = csrf({
   cookie: {
     key: "XSRF-TOKEN",
     httpOnly: false,
-    secure: true,
-    sameSite: none,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict", // strict for same-domain security
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });
 
 // CSRF token endpoint
 app.get("/csrf-token", csrfMiddleware, (req, res) => {
-  res.json({ csrfToken: req.csrfToken?.() || "" });
+  res.json({ csrfToken: req.csrfToken() });
 });
 
+// Mount auth WITHOUT CSRF
 app.use("/auth", authRoutes);
 
+// Protect everything else
 app.use(csrfMiddleware);
 
+// Other routes (no limiter on products to avoid 429 on featured)
 app.use("/products", productRoutes);
 app.use("/cart", cartLimiter, cartRoutes);
 app.use("/orders", orderLimiter, orderRoute);
@@ -105,10 +109,9 @@ app.use("/payments", paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-  app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  app.use(express.static(path.join(__dirname, "/frontend/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "/frontend/dist/index.html"));
   });
 }
 

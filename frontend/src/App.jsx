@@ -17,34 +17,30 @@ import PurchaseSuccessPage from "./pages/PurchaseSuccess";
 import PurchaseCancelPage from "./pages/PurchaseCancel";
 import ProductPage from "./pages/ProductPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import axios, { setCsrfToken } from "./lib/axios";
-
+import axios from "./lib/axios";
 function App() {
   const { user, checkingAuth } = useUserStore();
   const { getCartItems } = useCartStore();
 
-  // Fetch CSRF token on app load
+  // 1. Fetch CSRF token (for cross-domain Render)
   useEffect(() => {
-    axios
-      .get("/csrf-token")
-      .then((res) => {
-        setCsrfToken(res.data.csrfToken); // ← now works
-        // console.log("✅ CSRF token loaded");
-      })
-      .catch((error) => {
-        console.error("Failed to fetch CSRF token:", error);
-      });
+    axios.get("/csrf-token").catch((error) => {
+      console.error("Failed to fetch CSRF token:", error);
+    });
   }, []);
 
+  // 2. Check authentication
   useEffect(() => {
-    useUserStore.getState().checkAuth();   // call directly (cleaner)
-  },
+    useUserStore.getState().checkAuth();
+  }, []);
 
+  // 3. Load cart when user is logged in
   useEffect(() => {
     if (user) getCartItems();
   }, [getCartItems, user]);
 
   if (checkingAuth) return <LoadingSpinner />;
+
   return (
     <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
       {/* Background gradient */}
@@ -96,4 +92,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
