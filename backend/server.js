@@ -113,13 +113,13 @@ let frontendPath = null;
 for (const p of possiblePaths) {
   if (fs.existsSync(p)) {
     frontendPath = p;
-    console.log(`✅ Frontend dist found at: ${p}`);
+    console.log(`Frontend dist found at: ${p}`);
     break;
   }
 }
 
 if (!frontendPath) {
-  console.log("⚠️ Frontend dist NOT found. Searched paths:", possiblePaths);
+  console.log("Frontend dist NOT found. Searched paths:", possiblePaths);
 }
 
 if (frontendPath) {
@@ -146,7 +146,7 @@ if (frontendPath) {
   });
 }
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   try {
