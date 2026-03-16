@@ -46,7 +46,7 @@ app.use(
         imgSrc: ["'self'", "data:", "https:", "res.cloudinary.com"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
         connectSrc: ["'self'", "https://api.razorpay.com"],
-        frameSrc: ["https://api.razorpay.com"],
+        frameSrc: ["'self'", "https://api.razorpay.com"],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -110,7 +110,7 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Adjusted for Render /src
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Fixed for Render /src structure
   // Debug: Log if dist exists and its contents
   if (fs.existsSync(frontendPath)) {
     console.log(
