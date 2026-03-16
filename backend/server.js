@@ -64,7 +64,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(null, true);
       }
     },
     credentials: true,
@@ -108,10 +108,13 @@ app.use("/coupon", couponRoutes);
 app.use("/payments", paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
+// Around line 111-116, change:
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const frontendPath = path.resolve(__dirname, "../frontend/dist");
+  console.log("Frontend path:", frontendPath);
+  app.use(express.static(frontendPath));
   app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, "/frontend/dist/index.html"));
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
 
