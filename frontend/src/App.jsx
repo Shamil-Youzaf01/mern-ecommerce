@@ -25,14 +25,9 @@ function App() {
 
   // Fetch CSRF token on app load
   useEffect(() => {
-    const fetchCsrfToken = async () => {
-      try {
-        await axios.get("/csrf-token");
-      } catch (error) {
-        console.error("Failed to fetch CSRF token:", error);
-      }
-    };
-    fetchCsrfToken();
+    axios
+      .get("/csrf-token")
+      .catch((error) => console.error("CSRF token fetch failed:", error));
   }, []);
 
   useEffect(() => {

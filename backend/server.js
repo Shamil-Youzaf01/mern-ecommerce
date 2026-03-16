@@ -64,7 +64,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true);
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
@@ -80,10 +80,10 @@ app.use("/uploads", express.static("uploads"));
 
 const csrfMiddleware = csrf({
   cookie: {
-    name: "XSRF-TOKEN",
+    key: "XSRF-TOKEN",
     httpOnly: false,
-    secure: true,
-    sameSite: "none",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "none",
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });
@@ -93,29 +93,10 @@ app.get("/csrf-token", csrfMiddleware, (req, res) => {
   res.json({ csrfToken: req.csrfToken?.() || "" });
 });
 
-// Custom middleware to skip CSRF for specific routes
-const csrfSkipper = (req, res, next) => {
-  const skipRoutes = [
-    "/auth",
-    "/products",
-    "/cart",
-    "/orders",
-    "/payments",
-    "/coupon",
-  ];
-
-  const shouldSkip = skipRoutes.some((route) =>
-    req.originalUrl.startsWith(route),
-  );
-
-  if (shouldSkip) return next();
-  return csrfMiddleware(req, res, next);
-};
-
-// CSRF skipper to all /api routes
-app.use("/", csrfSkipper);
-
 app.use("/auth", authRoutes);
+
+app.use(csrfMiddleware);
+
 app.use("/products", productLimiter, productRoutes);
 app.use("/cart", cartLimiter, cartRoutes);
 app.use("/orders", orderLimiter, orderRoute);

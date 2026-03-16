@@ -4,13 +4,25 @@ import { toast } from "react-hot-toast";
 
 export const useUserStore = create((set, get) => ({
   user: null,
-  users: [], // For admin - all users
+  users: [],
   loading: false,
-  usersLoading: false, // Separate loading for users list
+  usersLoading: false,
   checkingAuth: true,
   currentPage: 1,
   totalPages: 1,
   totalResults: 0,
+
+  fetchCsrfToken: async () => {
+    try {
+      await axios.get("/csrf-token");
+      console.log("CSRF token cookie set"); //for debugging
+    } catch (error) {
+      console.error(
+        "Failed to fetch CSRF token:",
+        error.response?.data || error.message,
+      );
+    }
+  },
 
   signup: async ({ name, email, password, confirmPassword }) => {
     set({ loading: true });
