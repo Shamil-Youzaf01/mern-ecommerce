@@ -4,6 +4,7 @@ import axios from "../lib/axios";
 
 export const useProductStore = create((set) => ({
   products: [],
+  featuredProducts: [],
   loading: false,
   currentPage: 1,
   totalPages: 1,
@@ -26,6 +27,7 @@ export const useProductStore = create((set) => ({
       toast.error(error.response?.data?.error || "Failed to create product");
     }
   },
+
   fetchAllProducts: async (page = 1, limit = 10) => {
     set({ loading: true });
     try {
@@ -119,7 +121,7 @@ export const useProductStore = create((set) => ({
     set({ loading: true });
     try {
       const response = await axios.get("/products/featured");
-      set({ products: response.data, loading: false });
+      set({ featuredProducts: response.data, loading: false });
     } catch (error) {
       set({ error: "Failed to fetch products", loading: false });
       console.log("Error fetching featured products:", error);
