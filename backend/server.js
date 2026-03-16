@@ -71,27 +71,27 @@ app.use(cookieParser());
 // Static files
 app.use("/uploads", express.static("uploads"));
 
-// FIXED CSRF for cross-domain deployment (Render frontend -> Render backend)
-const csrfMiddleware = csrf({
-  cookie: {
-    key: "XSRF-TOKEN",
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none", // Required for cross-origin requests
-  },
-  ignoreMethods: ["GET", "HEAD", "OPTIONS"],
-});
+// TEMPORARILY DISABLED CSRF FOR TESTING
+// const csrfMiddleware = csrf({
+//   cookie: {
+//     key: "XSRF-TOKEN",
+//     httpOnly: false,
+//     secure: true,
+//     sameSite: "none",
+//   },
+//   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
+// });
 
-// CSRF token endpoint
-app.get("/csrf-token", csrfMiddleware, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() || "" });
-});
+// CSRF token endpoint (disabled)
+// app.get("/csrf-token", csrfMiddleware, (req, res) => {
+//   res.json({ csrfToken: req.csrfToken() || "" });
+// });
 
 // Mount auth WITHOUT CSRF
 app.use("/auth", authRoutes);
 
-// Protect everything else
-app.use(csrfMiddleware);
+// Protect everything else (CSRF disabled)
+// app.use(csrfMiddleware);
 
 // Other routes (no limiter on products to avoid 429 on featured)
 app.use("/products", productRoutes);
