@@ -60,6 +60,7 @@ app.use(
       const allowedOrigins = [
         "http://localhost:5173",
         "https://orbitecommerce-git-main-shamil-youzaf01s-projects.vercel.app",
+        "https://orbitecommerce-3mdige6tf-shamil-youzaf01s-projects.vercel.app",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
