@@ -108,11 +108,12 @@ app.use("/coupon", couponRoutes);
 app.use("/payments", paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
-// Around line 111-116, change:
+// Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../frontend/dist");
-  console.log("Frontend path:", frontendPath);
+  const frontendPath = path.join(__dirname, "..", "frontend", "dist");
   app.use(express.static(frontendPath));
+
+  // Catch-all for SPA routing
   app.get(/.*/, (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
