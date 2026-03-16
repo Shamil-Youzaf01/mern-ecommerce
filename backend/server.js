@@ -46,7 +46,7 @@ app.use(
         imgSrc: ["'self'", "data:", "https:", "res.cloudinary.com"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
         connectSrc: ["'self'", "https://api.razorpay.com"],
-        frameSrc: ["'self'", "https://api.razorpay.com"],
+        frameSrc: ["https://api.razorpay.com"],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -110,7 +110,7 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Correct for /opt/render/project/src/frontend/dist
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Exact match for Render /opt/render/project/src/frontend/dist
   // Debug: Log if dist exists and its contents
   if (fs.existsSync(frontendPath)) {
     console.log(
@@ -132,7 +132,7 @@ if (process.env.NODE_ENV === "production") {
     }),
   );
 
-  // Catch-all for SPA routing (fixed to '*' string)
+  // Catch-all for SPA routing
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"), (err) => {
       if (err) {
