@@ -5,7 +5,7 @@ import path from "path";
 import cors from "cors";
 import csrf from "csurf";
 import helmet from "helmet";
-import fs from "fs"; // ← added for debug
+import fs from "fs"; // for debug
 
 // Rate Limiters
 import {
@@ -59,12 +59,12 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         "http://localhost:5173",
-        "https://orbit-ecom.onrender.com", // ← your Render URL
+        "https://orbit-ecom.onrender.com",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS")); // ← fixed to reject
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
@@ -75,7 +75,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Static files for uploads
+// Static files
 app.use("/uploads", express.static("uploads"));
 
 // FIXED CSRF for same-domain deployment
@@ -84,7 +84,7 @@ const csrfMiddleware = csrf({
     key: "XSRF-TOKEN",
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict", // ← changed to strict for same-domain security
+    sameSite: "strict",
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });
@@ -110,7 +110,7 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist");
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Adjusted for Render /src
   // Debug: Log if dist exists and its contents
   if (fs.existsSync(frontendPath)) {
     console.log(
@@ -132,7 +132,7 @@ if (process.env.NODE_ENV === "production") {
     }),
   );
 
-  // Catch-all for SPA routing (after static handles assets)
+  // Catch-all for SPA routing (fixed to '*' string)
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
