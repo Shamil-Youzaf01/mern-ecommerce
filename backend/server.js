@@ -5,6 +5,7 @@ import path from "path";
 import cors from "cors";
 import csrf from "csurf";
 import helmet from "helmet";
+import fs from "fs"; // ← added for debug
 
 // Rate Limiters
 import {
@@ -23,7 +24,6 @@ import couponRoutes from "./routes/coupon.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoute from "./routes/analytics.route.js";
 import orderRoute from "./routes/order.route.js";
-
 import { connectDB } from "./lib/db.js";
 
 //config
@@ -59,12 +59,12 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         "http://localhost:5173",
-        "https://orbit-ecom.onrender.com",
+        "https://orbit-ecom.onrender.com", // ← your Render URL
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true);
+        callback(new Error("Not allowed by CORS")); // ← fixed to reject
       }
     },
     credentials: true,
@@ -75,7 +75,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Static files
+// Static files for uploads
 app.use("/uploads", express.static("uploads"));
 
 // FIXED CSRF for same-domain deployment
@@ -84,14 +84,14 @@ const csrfMiddleware = csrf({
     key: "XSRF-TOKEN",
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    sameSite: "strict", // ← changed to strict for same-domain security
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });
 
 // CSRF token endpoint
 app.get("/csrf-token", csrfMiddleware, (req, res) => {
-  res.json({ csrfToken: req.csrfToken?.() || "" });
+  res.json({ csrfToken: req.csrfToken() || "" });
 });
 
 // Mount auth WITHOUT CSRF
@@ -110,11 +110,30 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "..", "frontend", "dist");
-  app.use(express.static(frontendPath));
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist");
+  // Debug: Log if dist exists and its contents
+  if (fs.existsSync(frontendPath)) {
+    console.log(
+      `✅ frontend/dist exists. Contents: ${fs.readdirSync(frontendPath).join(", ")}`,
+    );
+  } else {
+    console.log(`❌ frontend/dist NOT found at ${frontendPath}`);
+  }
 
-  // Catch-all for SPA routing
-  app.get(/.*/, (req, res) => {
+  app.use(
+    express.static(frontendPath, {
+      setHeaders: (res, filepath) => {
+        if (filepath.endsWith(".js")) {
+          res.setHeader("Content-Type", "application/javascript");
+        } else if (filepath.endsWith(".css")) {
+          res.setHeader("Content-Type", "text/css");
+        }
+      },
+    }),
+  );
+
+  // Catch-all for SPA routing (after static handles assets)
+  app.get("*", (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
