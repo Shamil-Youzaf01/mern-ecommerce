@@ -30,7 +30,6 @@ import { connectDB } from "./lib/db.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
 // Global rate limiting
@@ -56,17 +55,11 @@ app.use(
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "https://mern-ecommerce-liard-three.vercel.app/",
-      ];
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://orbit-ecommerce-frontend.onrender.com",
+    ],
     credentials: true,
   }),
 );
@@ -78,13 +71,13 @@ app.use(cookieParser());
 // Static files
 app.use("/uploads", express.static("uploads"));
 
-// FIXED CSRF for same-domain deployment
+// FIXED CSRF for cross-domain deployment (Render frontend -> Render backend)
 const csrfMiddleware = csrf({
   cookie: {
     key: "XSRF-TOKEN",
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "none", // Required for cross-origin requests
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });
@@ -153,20 +146,13 @@ if (frontendPath) {
   });
 }
 
-// For Vercel serverless
-// For Vercel serverless - connect to database on first request
-let isConnected = false;
-
-app.use(async (req, res, next) => {
-  if (!isConnected) {
-    try {
-      await connectDB();
-      isConnected = true;
-    } catch (error) {
-      console.error("MongoDB connection error:", error.message);
-    }
+const PORT = process.env.PORT;
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  try {
+    await connectDB();
+    console.log("MongoDB connected");
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
   }
-  next();
 });
-
-export default app;

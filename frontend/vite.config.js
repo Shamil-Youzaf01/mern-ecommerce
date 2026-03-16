@@ -12,4 +12,7 @@ export default defineConfig({
       },
     },
   },
+  // Set your Render backend URL here for production
+  // e.g., https://your-backend.onrender.com
+  envPrefix: "VITE_",
 });
