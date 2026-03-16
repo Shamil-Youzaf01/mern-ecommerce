@@ -109,17 +109,27 @@ app.use("/payments", paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
-if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "frontend", "dist");
-  // Debug: Log if dist exists and its contents
-  if (fs.existsSync(frontendPath)) {
-    console.log(
-      `✅ frontend/dist exists. Contents: ${fs.readdirSync(frontendPath).join(", ")}`,
-    );
-  } else {
-    console.log(`❌ frontend/dist NOT found at ${frontendPath}`);
-  }
+// Try multiple possible locations for the frontend build output
+const possiblePaths = [
+  path.join(__dirname, "frontend", "dist"),
+  path.join(__dirname, "dist"),
+  path.join(process.cwd(), "frontend", "dist"),
+];
 
+let frontendPath = null;
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) {
+    frontendPath = p;
+    console.log(`✅ Frontend dist found at: ${p}`);
+    break;
+  }
+}
+
+if (!frontendPath) {
+  console.log("⚠️ Frontend dist NOT found. Searched paths:", possiblePaths);
+}
+
+if (frontendPath) {
   app.use(
     express.static(frontendPath, {
       setHeaders: (res, filepath) => {
@@ -144,4 +154,19 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // For Vercel serverless
+// For Vercel serverless - connect to database on first request
+let isConnected = false;
+
+app.use(async (req, res, next) => {
+  if (!isConnected) {
+    try {
+      await connectDB();
+      isConnected = true;
+    } catch (error) {
+      console.error("MongoDB connection error:", error.message);
+    }
+  }
+  next();
+});
+
 export default app;
