@@ -143,7 +143,5 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  connectDB().catch((err) => console.error("DB connection failed:", err)); // debug
-});
+// For Vercel serverless
+export default app;
