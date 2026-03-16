@@ -110,7 +110,7 @@ app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "..", "..", "frontend", "dist"); // ← fixed for Render /src
+  const frontendPath = path.resolve(__dirname, "..", "frontend", "dist"); // Adjusted for Render /src
   // Debug: Log if dist exists and its contents
   if (fs.existsSync(frontendPath)) {
     console.log(
@@ -140,5 +140,5 @@ if (process.env.NODE_ENV === "production") {
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
-  connectDB().catch((err) => console.error("DB connection failed:", err)); // ← added debug
+  connectDB().catch((err) => console.error("DB connection failed:", err)); // debug
 });
