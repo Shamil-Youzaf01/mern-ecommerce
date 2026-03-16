@@ -18,20 +18,29 @@ import PurchaseCancelPage from "./pages/PurchaseCancel";
 import ProductPage from "./pages/ProductPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import axios from "./lib/axios";
+
 function App() {
   const { user, checkingAuth } = useUserStore();
   const { getCartItems } = useCartStore();
 
   // 1. Fetch CSRF token (for cross-domain Render)
+  // Fix - wait for CSRF token first
   useEffect(() => {
-    axios.get("/csrf-token").catch((error) => {
-      console.error("Failed to fetch CSRF token:", error);
-    });
+    const fetchCsrf = async () => {
+      try {
+        await axios.get("/csrf-token");
+      } catch (error) {
+        console.error("Failed to fetch CSRF token:", error);
+      }
+    };
+    fetchCsrf();
   }, []);
 
-  // 2. Check authentication
   useEffect(() => {
-    useUserStore.getState().checkAuth();
+    // Small delay to ensure CSRF cookie is set
+    setTimeout(() => {
+      useUserStore.getState().checkAuth();
+    }, 100);
   }, []);
 
   // 3. Load cart when user is logged in
