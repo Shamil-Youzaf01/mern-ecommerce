@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import path from "path";
 import cors from "cors";
-import csrf from "csurf";
+import csrf from "@sailshq/csurf";
 import helmet from "helmet";
 import fs from "fs"; // for debug
 
