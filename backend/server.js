@@ -97,7 +97,7 @@ app.use("/auth", authRoutes);
 
 app.use(csrfMiddleware);
 
-app.use("/products", productLimiter, productRoutes);
+app.use("/products", productRoutes);
 app.use("/cart", cartLimiter, cartRoutes);
 app.use("/orders", orderLimiter, orderRoute);
 app.use("/coupon", couponRoutes);
