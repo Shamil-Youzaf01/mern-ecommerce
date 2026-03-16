@@ -82,8 +82,8 @@ const csrfMiddleware = csrf({
   cookie: {
     key: "XSRF-TOKEN",
     httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "none",
+    secure: true,
+    sameSite: none,
   },
   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
 });

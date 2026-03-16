@@ -17,22 +17,28 @@ import PurchaseSuccessPage from "./pages/PurchaseSuccess";
 import PurchaseCancelPage from "./pages/PurchaseCancel";
 import ProductPage from "./pages/ProductPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import axios from "./lib/axios";
+import axios, { setCsrfToken } from "./lib/axios";
 
 function App() {
-  const { user, checkAuth, checkingAuth } = useUserStore();
+  const { user, checkingAuth } = useUserStore();
   const { getCartItems } = useCartStore();
 
   // Fetch CSRF token on app load
   useEffect(() => {
     axios
       .get("/csrf-token")
-      .catch((error) => console.error("CSRF token fetch failed:", error));
+      .then((res) => {
+        setCsrfToken(res.data.csrfToken); // ← now works
+        // console.log("✅ CSRF token loaded");
+      })
+      .catch((error) => {
+        console.error("Failed to fetch CSRF token:", error);
+      });
   }, []);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    useUserStore.getState().checkAuth();   // call directly (cleaner)
+  },
 
   useEffect(() => {
     if (user) getCartItems();
