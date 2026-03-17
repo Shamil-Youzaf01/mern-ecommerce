@@ -1,9 +1,6 @@
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
-
-// CommonJS interop fix
-import multerStorageCloudinary from "multer-storage-cloudinary";
-const { CloudinaryStorage } = multerStorageCloudinary;
+import CloudinaryStorage from "multer-storage-cloudinary";
 
 const storage = new CloudinaryStorage({
   cloudinary,
