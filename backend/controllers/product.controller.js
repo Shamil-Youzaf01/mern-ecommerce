@@ -2,6 +2,27 @@ import cloudinary from "../lib/cloudinary.js";
 import { redis } from "../lib/redis.js";
 import Product from "../models/product.model.js";
 
+// Helper to upload buffer to Cloudinary (required for memory storage)
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "products",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"],
+      },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary upload error:", error);
+          reject(error);
+        } else {
+          resolve(result.secure_url);
+        }
+      },
+    );
+    stream.end(buffer);
+  });
+};
+
 export const getAllProducts = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -47,60 +68,43 @@ export const getFeaturedProducts = async (req, res) => {
   }
 };
 
-// backend/controllers/product.controller.js
 export const createProduct = async (req, res) => {
-  console.log("=== CREATE PRODUCT DEBUG START ===");
-  console.log("req.body:", req.body);
-  console.log("Number of files received:", req.files ? req.files.length : 0);
+  console.log("=== CREATE PRODUCT DEBUG ===");
+  console.log("Body:", req.body);
+  console.log("Files received:", req.files?.length || 0);
 
   try {
     const imageUrls = [];
 
-    // === IMAGE UPLOAD SECTION ===
     if (req.files && req.files.length > 0) {
-      console.log("Starting Cloudinary upload...");
+      console.log("Uploading images to Cloudinary...");
       for (const file of req.files) {
         console.log(
-          `→ Uploading: ${file.originalname} (${(file.size / 1024).toFixed(1)} KB)`,
+          `→ Uploading ${file.originalname} (${(file.size / 1024).toFixed(1)} KB)`,
         );
-
-        const result = await cloudinary.uploader.upload(file.buffer, {
-          folder: "products",
-          allowed_formats: ["jpg", "jpeg", "png", "webp"],
-        });
-
-        imageUrls.push(result.secure_url);
-        console.log(`✅ Uploaded: ${result.secure_url}`);
+        const imageUrl = await uploadToCloudinary(file.buffer);
+        imageUrls.push(imageUrl);
+        console.log(`✅ Uploaded: ${imageUrl}`);
       }
-      console.log("All images uploaded successfully");
     } else {
-      console.log("No images uploaded (creating without images)");
+      console.log("No images — creating text-only product");
     }
 
-    // === SAVE TO MONGO ===
-    const productData = {
+    const product = await Product.create({
       name: req.body.name,
       description: req.body.description,
       price: parseFloat(req.body.price) || 0,
       category: req.body.category,
-      images: imageUrls, // always array (even empty)
-    };
+      images: imageUrls, // always an array (empty = no images)
+    });
 
-    console.log("Product data being saved:", productData);
-
-    const product = await Product.create(productData);
-
-    console.log("✅ Product created successfully! ID:", product._id);
+    console.log("✅ Product created! ID:", product._id);
     res.status(201).json(product);
   } catch (error) {
-    console.error("=== CREATE PRODUCT FAILED ===");
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
-
+    console.error("=== CREATE FAILED ===", error);
     res.status(500).json({
       message: "Failed to create product",
       error: error.message,
-      hint: "Check Render logs for full details",
     });
   }
 };
@@ -290,16 +294,19 @@ export const updateProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    const updateData = { ...req.body };
+    const updateData = {
+      name: req.body.name,
+      description: req.body.description,
+      price: parseFloat(req.body.price),
+      category: req.body.category,
+    };
 
+    // Handle new images
     if (req.files && req.files.length > 0) {
       const newImageUrls = [];
       for (const file of req.files) {
-        const result = await cloudinary.uploader.upload(file.buffer, {
-          folder: "products",
-          allowed_formats: ["jpg", "jpeg", "png", "webp"],
-        });
-        newImageUrls.push(result.secure_url);
+        const imageUrl = await uploadToCloudinary(file.buffer);
+        newImageUrls.push(imageUrl);
       }
       updateData.images = [...(product.images || []), ...newImageUrls];
     }
