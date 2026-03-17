@@ -25,16 +25,16 @@ function App() {
 
   // 1. Fetch CSRF token (for cross-domain Render)
   // Fix - wait for CSRF token first
-  useEffect(() => {
-    const fetchCsrf = async () => {
-      try {
-        await axios.get("/csrf-token");
-      } catch (error) {
-        console.error("Failed to fetch CSRF token:", error);
-      }
-    };
-    fetchCsrf();
-  }, []);
+  //useEffect(() => {
+  //const fetchCsrf = async () => {
+  //  try {
+  //    await axios.get("/csrf-token");
+  //  } catch (error) {
+  //  console.error("Failed to fetch CSRF token:", error);
+  // }
+  //  };
+  // fetchCsrf();
+  // }, []);
 
   useEffect(() => {
     // Small delay to ensure CSRF cookie is set
