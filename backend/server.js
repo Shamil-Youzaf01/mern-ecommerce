@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import path from "path";
 import cors from "cors";
-import csrf from "@sailshq/csurf";
+//import csrf from "@sailshq/csurf";
 import helmet from "helmet";
 import fs from "fs"; // for debug
 
@@ -25,6 +25,7 @@ import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoute from "./routes/analytics.route.js";
 import orderRoute from "./routes/order.route.js";
 import { connectDB } from "./lib/db.js";
+import cloudinary from "./lib/cloudinary.js";
 
 //config
 dotenv.config();
@@ -92,6 +93,14 @@ app.use("/auth", authRoutes);
 
 // Protect everything else (CSRF disabled)
 // app.use(csrfMiddleware);
+
+// Add this temporarily to server.js
+app.get("/test-cloudinary", (req, res) => {
+  res.json({
+    configured: !!cloudinary.config().cloud_name,
+    cloudName: cloudinary.config().cloud_name,
+  });
+});
 
 // Other routes (no limiter on products to avoid 429 on featured)
 app.use("/products", productRoutes);
