@@ -173,29 +173,18 @@ axios.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("refresh-token")
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        if (refreshPromise) {
-          await refreshPromise;
-          return axios(originalRequest);
-        }
-
-        refreshPromise = useUserStore.getState().refreshToken();
+        // Refresh token...
         await refreshPromise;
-        refreshPromise = null;
-        return axios(originalRequest);
+        return axios(originalRequest); // Retry the request
       } catch (refreshError) {
-        useUserStore.getState().logout();
+        useUserStore.getState().logout(); // ← This logs out user!
         return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
   },
 );
