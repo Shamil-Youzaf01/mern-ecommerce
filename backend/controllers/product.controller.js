@@ -48,10 +48,16 @@ export const getFeaturedProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
+  console.log("=== CREATE PRODUCT DEBUG ===");
+  console.log("Files:", req.files);
+  console.log("Body:", req.body);
+
   try {
     let images = [];
     if (req.files && req.files.length > 0) {
+      console.log("Uploading images...");
       images = req.files.map((file) => file.path);
+      console.log("Uploaded images:", images);
     }
 
     if (!images.length && req.body.images) {
