@@ -32,8 +32,16 @@ dotenv.config();
 const app = express();
 const __dirname = path.resolve();
 
-// Global rate limiting
-app.use(globalLimiter);
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://orbit-ecommerce-frontend.onrender.com",
+    ],
+    credentials: true,
+  }),
+);
 
 app.use(
   helmet({
@@ -53,16 +61,8 @@ app.use(
   }),
 );
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://orbit-ecommerce-frontend.onrender.com",
-    ],
-    credentials: true,
-  }),
-);
+// Global rate limiting
+app.use(globalLimiter);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
