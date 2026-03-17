@@ -12,18 +12,6 @@ export const useUserStore = create((set, get) => ({
   totalPages: 1,
   totalResults: 0,
 
-  fetchCsrfToken: async () => {
-    try {
-      await axios.get("/csrf-token");
-      console.log("CSRF token cookie set"); //for debugging
-    } catch (error) {
-      console.error(
-        "Failed to fetch CSRF token:",
-        error.response?.data || error.message,
-      );
-    }
-  },
-
   signup: async ({ name, email, password, confirmPassword }) => {
     set({ loading: true });
 

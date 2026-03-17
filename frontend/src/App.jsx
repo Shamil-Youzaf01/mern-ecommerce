@@ -17,7 +17,6 @@ import PurchaseSuccessPage from "./pages/PurchaseSuccess";
 import PurchaseCancelPage from "./pages/PurchaseCancel";
 import ProductPage from "./pages/ProductPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import axios from "./lib/axios";
 
 function App() {
   const { user, checkingAuth } = useUserStore();
@@ -37,13 +36,10 @@ function App() {
   // }, []);
 
   useEffect(() => {
-    // Small delay to ensure CSRF cookie is set
-    setTimeout(() => {
-      useUserStore.getState().checkAuth();
-    }, 100);
+    useUserStore.getState().checkAuth();
   }, []);
 
-  // 3. Load cart when user is logged in
+  // 2. Load cart when user is logged in
   useEffect(() => {
     if (user) getCartItems();
   }, [getCartItems, user]);

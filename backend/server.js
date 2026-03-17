@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import path from "path";
 import cors from "cors";
-//import csrf from "@sailshq/csurf";
 import helmet from "helmet";
 import fs from "fs"; // for debug
 
@@ -72,29 +71,10 @@ app.use(cookieParser());
 // Static files
 app.use("/uploads", express.static("uploads"));
 
-// TEMPORARILY DISABLED CSRF FOR TESTING
-// const csrfMiddleware = csrf({
-//   cookie: {
-//     key: "XSRF-TOKEN",
-//     httpOnly: false,
-//     secure: true,
-//     sameSite: "none",
-//   },
-//   ignoreMethods: ["GET", "HEAD", "OPTIONS"],
-// });
-
-// CSRF token endpoint (disabled)
-// app.get("/csrf-token", csrfMiddleware, (req, res) => {
-//   res.json({ csrfToken: req.csrfToken() || "" });
-// });
-
-// Mount auth WITHOUT CSRF
+// Mount auth routes
 app.use("/auth", authRoutes);
 
-// Protect everything else (CSRF disabled)
-// app.use(csrfMiddleware);
-
-// Add this temporarily to server.js
+// Test endpoint for cloudinary
 app.get("/test-cloudinary", (req, res) => {
   res.json({
     configured: !!cloudinary.config().cloud_name,
