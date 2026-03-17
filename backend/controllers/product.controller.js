@@ -47,42 +47,60 @@ export const getFeaturedProducts = async (req, res) => {
   }
 };
 
+// backend/controllers/product.controller.js
 export const createProduct = async (req, res) => {
-  console.log("=== CREATE PRODUCT DEBUG ===");
-  console.log("Body:", req.body);
-  console.log("Files:", req.files?.length || 0);
+  console.log("=== CREATE PRODUCT DEBUG START ===");
+  console.log("req.body:", req.body);
+  console.log("Number of files received:", req.files ? req.files.length : 0);
 
   try {
     const imageUrls = [];
 
-    // Upload each file manually to Cloudinary
+    // === IMAGE UPLOAD SECTION ===
     if (req.files && req.files.length > 0) {
+      console.log("Starting Cloudinary upload...");
       for (const file of req.files) {
+        console.log(
+          `→ Uploading: ${file.originalname} (${(file.size / 1024).toFixed(1)} KB)`,
+        );
+
         const result = await cloudinary.uploader.upload(file.buffer, {
           folder: "products",
           allowed_formats: ["jpg", "jpeg", "png", "webp"],
-          resource_type: "auto",
         });
+
         imageUrls.push(result.secure_url);
+        console.log(`✅ Uploaded: ${result.secure_url}`);
       }
-      console.log("Uploaded images:", imageUrls);
+      console.log("All images uploaded successfully");
+    } else {
+      console.log("No images uploaded (creating without images)");
     }
 
-    // Create product (no more weird req.body.images fallback)
-    const product = await Product.create({
+    // === SAVE TO MONGO ===
+    const productData = {
       name: req.body.name,
       description: req.body.description,
-      price: req.body.price,
+      price: parseFloat(req.body.price) || 0,
       category: req.body.category,
-      images: imageUrls.length > 0 ? imageUrls : [],
-    });
+      images: imageUrls, // always array (even empty)
+    };
 
+    console.log("Product data being saved:", productData);
+
+    const product = await Product.create(productData);
+
+    console.log("✅ Product created successfully! ID:", product._id);
     res.status(201).json(product);
   } catch (error) {
-    console.error("Create product error:", error);
+    console.error("=== CREATE PRODUCT FAILED ===");
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+
     res.status(500).json({
       message: "Failed to create product",
       error: error.message,
+      hint: "Check Render logs for full details",
     });
   }
 };
