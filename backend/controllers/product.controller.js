@@ -49,34 +49,41 @@ export const getFeaturedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   console.log("=== CREATE PRODUCT DEBUG ===");
-  console.log("Files:", req.files);
   console.log("Body:", req.body);
+  console.log("Files:", req.files?.length || 0);
 
   try {
-    let images = [];
+    const imageUrls = [];
+
+    // Upload each file manually to Cloudinary
     if (req.files && req.files.length > 0) {
-      console.log("Uploading images...");
-      images = req.files.map((file) => file.path);
-      console.log("Uploaded images:", images);
-    }
-
-    if (!images.length && req.body.images) {
-      try {
-        images = JSON.parse(req.body.images);
-      } catch {
-        images = [req.body.images];
+      for (const file of req.files) {
+        const result = await cloudinary.uploader.upload(file.buffer, {
+          folder: "products",
+          allowed_formats: ["jpg", "jpeg", "png", "webp"],
+          resource_type: "auto",
+        });
+        imageUrls.push(result.secure_url);
       }
+      console.log("Uploaded images:", imageUrls);
     }
 
-    const productData = {
-      ...req.body,
-      images: images.length > 0 ? images : undefined,
-    };
+    // Create product (no more weird req.body.images fallback)
+    const product = await Product.create({
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      images: imageUrls.length > 0 ? imageUrls : [],
+    });
 
-    const product = await Product.create(productData);
     res.status(201).json(product);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create product error:", error);
+    res.status(500).json({
+      message: "Failed to create product",
+      error: error.message,
+    });
   }
 };
 
@@ -262,11 +269,32 @@ export const getProductById = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.json(product);
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const updateData = { ...req.body };
+
+    if (req.files && req.files.length > 0) {
+      const newImageUrls = [];
+      for (const file of req.files) {
+        const result = await cloudinary.uploader.upload(file.buffer, {
+          folder: "products",
+          allowed_formats: ["jpg", "jpeg", "png", "webp"],
+        });
+        newImageUrls.push(result.secure_url);
+      }
+      updateData.images = [...(product.images || []), ...newImageUrls];
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true },
+    );
+
+    res.json(updatedProduct);
   } catch (error) {
+    console.error("Update product error:", error);
     res.status(500).json({ message: error.message });
   }
 };
