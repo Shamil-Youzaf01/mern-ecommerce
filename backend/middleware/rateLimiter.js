@@ -36,7 +36,7 @@ export const authLimiter = createLimiter({
 });
 
 export const paymentLimiter = createLimiter({
-  windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 50, // ← Increased for testing (was 5)
+  windowMs: 10 * 60 * 1000,
+  max: 5,
   message: "Too many payment attempts. Please wait before trying again.",
 });
