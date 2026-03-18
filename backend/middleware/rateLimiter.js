@@ -10,7 +10,11 @@ const keyGenerator = (req) => req.user?._id?.toString() || req.ip;
 const createLimiter = (options) =>
   rateLimit({
     store: new RedisStore({
-      sendCommand: (...args) => redis.call(...args),
+      sendCommand: (...args) => {
+        // Log every rate limit check
+        console.log(`[RateLimit] ${args[0].toUpperCase()}`, args.slice(1));
+        return redis.call(...args);
+      },
     }),
     keyGenerator,
     standardHeaders: true,
@@ -26,8 +30,8 @@ export const globalLimiter = createLimiter({
 });
 
 export const authLimiter = createLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 12,
+  windowMs: 5 * 60 * 1000,
+  max: 120,
   message: "Too many login/signup attempts. Try again later.",
 });
 
