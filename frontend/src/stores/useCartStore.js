@@ -2,6 +2,8 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
+const cartChannel = new BroadcastChannel("cart_sync");
+
 export const useCartStore = create((set, get) => ({
   cart: [],
   coupon: null,
@@ -17,6 +19,7 @@ export const useCartStore = create((set, get) => ({
       console.error("Error fetching coupon:", error);
     }
   },
+
   applyCoupon: async (code) => {
     try {
       const response = await axios.post("/coupon/validate", { code });
@@ -39,20 +42,21 @@ export const useCartStore = create((set, get) => ({
       const res = await axios.get("/cart");
       set({ cart: res.data });
       get().calculateTotals();
+      cartChannel.postMessage({ type: "CART_UPDATED" });
     } catch (error) {
       set({ cart: [] });
-      toast.error(error.response.data.message || "An error occurred");
+      toast.error(error.response?.data?.message || "An error occurred");
     }
   },
+
   clearCart: async () => {
     try {
-      // Clear from backend
       await axios.delete("/cart");
     } catch (error) {
       console.error("Error clearing backend cart:", error);
     }
-    // Clear local state
     set({ cart: [], coupon: null, total: 0, subtotal: 0 });
+    cartChannel.postMessage({ type: "CART_CLEARED" });
   },
 
   addToCart: async (product) => {
@@ -60,45 +64,41 @@ export const useCartStore = create((set, get) => ({
       await axios.post("/cart", { productId: product._id });
       toast.success("Product added to cart");
 
-      set((prevState) => {
-        const existingItem = prevState.cart.find(
-          (item) => item._id === product._id,
-        );
-        const newCart = existingItem
-          ? prevState.cart.map((item) =>
-              item._id === product._id
-                ? { ...item, quantity: item.quantity + 1 }
-                : item,
+      set((prev) => {
+        const existing = prev.cart.find((i) => i._id === product._id);
+        const newCart = existing
+          ? prev.cart.map((i) =>
+              i._id === product._id ? { ...i, quantity: i.quantity + 1 } : i,
             )
-          : [...prevState.cart, { ...product, quantity: 1 }];
+          : [...prev.cart, { ...product, quantity: 1 }];
         return { cart: newCart };
       });
       get().calculateTotals();
+      cartChannel.postMessage({ type: "CART_UPDATED" });
     } catch (error) {
-      toast.error(error.response.data.message || "An error occurred");
+      toast.error(error.response?.data?.message || "An error occurred");
     }
   },
+
   removeFromCart: async (productId) => {
     await axios.delete(`/cart`, { data: { productId } });
-    set((prevState) => ({
-      cart: prevState.cart.filter((item) => item._id !== productId),
-    }));
+    set((prev) => ({ cart: prev.cart.filter((i) => i._id !== productId) }));
     get().calculateTotals();
+    cartChannel.postMessage({ type: "CART_UPDATED" });
   },
-  updateQuantity: async (productId, quantity) => {
-    if (quantity === 0) {
-      get().removeFromCart(productId);
-      return;
-    }
 
+  updateQuantity: async (productId, quantity) => {
+    if (quantity === 0) return get().removeFromCart(productId);
     await axios.put(`/cart/${productId}`, { quantity });
-    set((prevState) => ({
-      cart: prevState.cart.map((item) =>
-        item._id === productId ? { ...item, quantity } : item,
+    set((prev) => ({
+      cart: prev.cart.map((i) =>
+        i._id === productId ? { ...i, quantity } : i,
       ),
     }));
     get().calculateTotals();
+    cartChannel.postMessage({ type: "CART_UPDATED" });
   },
+
   calculateTotals: () => {
     const { cart, coupon, isCouponApplied } = get();
     const subtotal = cart.reduce(
@@ -113,5 +113,17 @@ export const useCartStore = create((set, get) => ({
     }
 
     set({ subtotal, total });
+  },
+
+  // AUTO SYNC OTHER TABS
+  initCartSync: () => {
+    cartChannel.onmessage = (event) => {
+      if (
+        event.data.type === "CART_UPDATED" ||
+        event.data.type === "CART_CLEARED"
+      ) {
+        get().getCartItems();
+      }
+    };
   },
 }));

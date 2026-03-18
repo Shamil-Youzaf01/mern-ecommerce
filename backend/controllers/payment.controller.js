@@ -1,11 +1,30 @@
 import crypto from "crypto";
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
+import Cart from "../models/cart.model.js";
 import { razorpay } from "../lib/razorpay.js";
 import { createNewCoupon } from "./coupon.controller.js";
 
 export const createRazorpayOrder = async (req, res) => {
   try {
+    // === CHECKOUT LOCK (prevents 2 tabs from creating 2 orders) ===
+    const existingCart = await Cart.findOne({ user: req.user._id });
+    if (
+      existingCart?.checkoutLockedUntil &&
+      new Date(existingCart.checkoutLockedUntil) > new Date()
+    ) {
+      return res.status(409).json({
+        error:
+          "Checkout already in progress in another tab/window. Please wait or refresh.",
+      });
+    }
+
+    // Lock the cart for 12 minutes
+    await Cart.findOneAndUpdate(
+      { user: req.user._id },
+      { checkoutLockedUntil: new Date(Date.now() + 12 * 60 * 1000) },
+    );
+
     const { products, couponCode } = req.body;
 
     if (!Array.isArray(products) || products.length === 0) {
@@ -107,6 +126,11 @@ export const verifyRazorpayPayment = async (req, res) => {
     order.razorpayPaymentId = razorpay_payment_id;
     order.razorpaySignature = razorpay_signature;
     await order.save();
+
+    await Cart.findOneAndUpdate(
+      { user: order.user },
+      { checkoutLockedUntil: null },
+    );
 
     if (order.couponCode) {
       await Coupon.findOneAndUpdate(

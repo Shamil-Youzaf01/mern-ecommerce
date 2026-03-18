@@ -9,8 +9,15 @@ import axios from "../lib/axios";
 import ShippingAddressForm from "./ShippingAddressForm";
 
 const OrderSummary = () => {
-  const { total, subtotal, coupon, isCouponApplied, cart, clearCart } =
-    useCartStore();
+  const {
+    total,
+    subtotal,
+    coupon,
+    isCouponApplied,
+    cart,
+    clearCart,
+    initCartSync,
+  } = useCartStore();
   const { user, updateAddress, deleteAddress } = useUserStore();
 
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -25,6 +32,10 @@ const OrderSummary = () => {
   const discountPercentage = coupon?.discountPercentage || 0;
 
   const couponCodeRef = useRef(null);
+
+  useEffect(() => {
+    initCartSync(); // ← starts listening to other tabs
+  }, [initCartSync]);
 
   useEffect(() => {
     if (isCouponApplied && coupon) {

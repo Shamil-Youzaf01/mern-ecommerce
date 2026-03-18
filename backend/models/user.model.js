@@ -33,12 +33,6 @@ const userSchema = new mongoose.Schema(
       enum: ["customer", "admin", "superadmin"],
       default: "customer",
     },
-    cart: [
-      {
-        productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-        quantity: { type: Number, default: 1 },
-      },
-    ],
     address: {
       street: { type: String },
       city: { type: String },
