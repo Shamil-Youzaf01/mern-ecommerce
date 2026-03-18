@@ -1,47 +1,58 @@
 import rateLimit from "express-rate-limit";
+import RedisStore from "rate-limit-redis";
+import Redis from "ioredis";
 
-export const globalLimiter = rateLimit({
+// Connect to Redis
+const redis = new Redis(process.env.REDIS_URL);
+
+// prefer user ID (logged-in), fallback to IP
+const keyGenerator = (req) => req.user?._id?.toString() || req.ip;
+
+const createLimiter = (options) =>
+  rateLimit({
+    store: new RedisStore({
+      client: redis,
+      prefix: "rl:",
+    }),
+    keyGenerator,
+    standardHeaders: true,
+    legacyHeaders: false,
+    trustProxy: true,
+    ...options,
+  });
+
+export const globalLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests from this IP, please try again later",
-  standardHeaders: true,
-  legacyHeaders: false,
-  trustProxy: 1,
+  max: 300,
+  message: "Too many requests, please slow down.",
 });
 
-export const authLimiter = rateLimit({
+export const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: "Too many authentication attempts, please try again later",
-  standardHeaders: true,
-  legacyHeaders: false,
-  trustProxy: 1,
+  max: 12,
+  message: "Too many login/signup attempts. Try again later.",
 });
 
-export const paymentLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  message: "Too many payment requests, please try again later",
-  trustProxy: 1,
+export const cartLimiter = createLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 250,
+  message: "Too many cart actions. Please wait a few seconds.",
 });
 
-export const productLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: "Too many product requests, please try again later",
-  trustProxy: 1,
+export const paymentLimiter = createLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: "Too many payment attempts. Please wait before trying again.",
 });
 
-export const cartLimiter = rateLimit({
+export const productLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: "Too many cart operations, please try again later",
-  trustProxy: 1,
+  max: 200,
+  message: "Too many product requests, please slow down.",
 });
 
-export const orderLimiter = rateLimit({
+export const orderLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: "Too many order requests, please try again later",
-  trustProxy: 1,
+  max: 30,
+  message: "Too many order requests, please try again later.",
 });
