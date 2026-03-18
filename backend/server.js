@@ -7,13 +7,7 @@ import helmet from "helmet";
 import fs from "fs"; // for debug
 
 // Rate Limiters
-import {
-  globalLimiter,
-  paymentLimiter,
-  productLimiter,
-  cartLimiter,
-  orderLimiter,
-} from "./middleware/rateLimiter.js";
+import { globalLimiter, paymentLimiter } from "./middleware/rateLimiter.js";
 
 // Routes
 import authRoutes from "./routes/auth.route.js";
@@ -68,15 +62,6 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    console.log(`${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
-  });
-  next();
-});
-
 // Static files
 app.use("/uploads", express.static("uploads"));
 
@@ -93,8 +78,8 @@ app.get("/test-cloudinary", (req, res) => {
 
 // Other routes (no limiter on products to avoid 429 on featured)
 app.use("/products", productRoutes);
-app.use("/cart", cartLimiter, cartRoutes);
-app.use("/orders", orderLimiter, orderRoute);
+app.use("/cart", cartRoutes);
+app.use("/orders", orderRoute);
 app.use("/coupon", couponRoutes);
 app.use("/payments", paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
