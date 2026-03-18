@@ -5,14 +5,12 @@ import Redis from "ioredis";
 // Connect to Redis
 const redis = new Redis(process.env.REDIS_URL);
 
-// prefer user ID (logged-in), fallback to IP
 const keyGenerator = (req) => req.user?._id?.toString() || req.ip;
 
 const createLimiter = (options) =>
   rateLimit({
     store: new RedisStore({
-      client: redis,
-      prefix: "rl:",
+      sendCommand: (...args) => redis.call(...args),
     }),
     keyGenerator,
     standardHeaders: true,
@@ -35,8 +33,8 @@ export const authLimiter = createLimiter({
 
 export const cartLimiter = createLimiter({
   windowMs: 5 * 60 * 1000,
-  max: 250,
-  message: "Too many cart actions. Please wait a few seconds.",
+  max: 500,
+  message: "Too many cart operations, please try again later.",
 });
 
 export const paymentLimiter = createLimiter({
