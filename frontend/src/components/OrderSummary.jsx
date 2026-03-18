@@ -14,6 +14,7 @@ const OrderSummary = () => {
   const { user, updateAddress, deleteAddress } = useUserStore();
 
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const savedAddress = user?.address;
 
   const savings = (subtotal || 0) - (total || 0);
@@ -23,10 +24,8 @@ const OrderSummary = () => {
 
   const discountPercentage = coupon?.discountPercentage || 0;
 
-  // Store coupon code in a ref to avoid state changes during checkout
   const couponCodeRef = useRef(null);
 
-  // Update ref when coupon is applied
   useEffect(() => {
     if (isCouponApplied && coupon) {
       couponCodeRef.current = coupon.code;
@@ -60,15 +59,16 @@ const OrderSummary = () => {
     }
   };
 
-  // Check if user has address
   const hasAddress = savedAddress && savedAddress.street;
 
   const handlePayment = async () => {
-    // Check if address is required
+    if (isProcessingPayment) return;
+
     if (!hasAddress) {
       setShowAddressForm(true);
       return;
     }
+    setIsProcessingPayment(true);
     try {
       if (coupon) {
         useCartStore.setState({ coupon: null, isCouponApplied: false });
@@ -149,6 +149,8 @@ const OrderSummary = () => {
       } else {
         alert("Payment failed. Please try again.");
       }
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -272,8 +274,37 @@ const OrderSummary = () => {
           whileHover={hasAddress ? { scale: 1.02 } : {}}
           whileTap={hasAddress ? { scale: 0.98 } : {}}
           onClick={handlePayment}
-          disabled={!hasAddress}
+          disabled={!hasAddress || isProcessingPayment}
         >
+          {isProcessingPayment ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Processing...
+            </span>
+          ) : hasAddress ? (
+            "Proceed to Checkout"
+          ) : (
+            "Add Address to Continue"
+          )}
           {hasAddress ? "Proceed to Checkout" : "Add Address to Continue"}
         </motion.button>
 

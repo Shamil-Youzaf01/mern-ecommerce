@@ -1,6 +1,5 @@
 import rateLimit from "express-rate-limit";
 
-// Trust proxy is required for Vercel deployments
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
