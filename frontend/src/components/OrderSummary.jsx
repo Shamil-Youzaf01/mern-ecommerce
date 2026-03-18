@@ -305,7 +305,6 @@ const OrderSummary = () => {
           ) : (
             "Add Address to Continue"
           )}
-          {hasAddress ? "Proceed to Checkout" : "Add Address to Continue"}
         </motion.button>
 
         <div className="flex items-center justify-center gap-2 mt-4">
