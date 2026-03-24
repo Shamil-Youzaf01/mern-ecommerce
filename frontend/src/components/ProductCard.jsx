@@ -1,18 +1,18 @@
-import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
+import { useNavigate } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
   const { user } = useUserStore();
   const { addToCart } = useCartStore();
+  const navigate = useNavigate();
   const handleAddToCart = () => {
     if (!user) {
-      toast.error("Please login to add products to cart", { id: "login" });
+      navigate("/signup");
       return;
     } else {
-      // add to cart
       addToCart(product);
     }
   };
@@ -31,11 +31,9 @@ const ProductCard = ({ product }) => {
         imageUrl.slice(versionIndex)
       );
     }
-    // Fallback: append query params if no version
     return `${imageUrl}?w=300&h=240&c_fill&g_center`;
   };
 
-  // Line 38-40 - Add fallback BEFORE passing to function:
   const optimizedImage = getOptimizedImageUrl(
     product.images?.[0] || product.image || "/placeholder.png",
   );

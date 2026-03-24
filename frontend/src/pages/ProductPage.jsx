@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "../lib/axios";
 import {
   ShoppingCart,
@@ -19,6 +19,7 @@ const ProductPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { addToCart } = useCartStore();
   const { user } = useUserStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -36,7 +37,7 @@ const ProductPage = () => {
 
   const handleAddToCart = () => {
     if (!user) {
-      toast.error("Please login to add products to cart");
+      navigate("/signup");
       return;
     }
     if (!product) {
