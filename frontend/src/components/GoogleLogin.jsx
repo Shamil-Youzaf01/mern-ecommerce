@@ -29,7 +29,13 @@ const GoogleLoginButton = () => {
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
-      <GoogleLogin onSuccess={handleSuccess} onError={handleError} useOneTap />
+      <GoogleLogin
+        onSuccess={handleSuccess}
+        onError={handleError}
+        size="large"
+        theme="outline"
+        text="signin_with"
+      />
     </GoogleOAuthProvider>
   );
 };
