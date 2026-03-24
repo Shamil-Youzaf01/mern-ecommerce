@@ -19,7 +19,6 @@ const createLimiter = (options) =>
     keyGenerator,
     standardHeaders: true,
     legacyHeaders: false,
-    trustProxy: true,
     ...options,
   });
 
@@ -37,6 +36,6 @@ export const authLimiter = createLimiter({
 
 export const paymentLimiter = createLimiter({
   windowMs: 10 * 60 * 1000,
-  max: 30,
+  max: 20,
   message: "Too many payment attempts. Please wait before trying again.",
 });

@@ -7,7 +7,6 @@ import { createNewCoupon } from "./coupon.controller.js";
 
 export const createRazorpayOrder = async (req, res) => {
   try {
-    // === CHECKOUT LOCK (prevents 2 tabs from creating 2 orders) ===
     const existingCart = await Cart.findOne({ user: req.user._id });
     if (
       existingCart?.checkoutLockedUntil &&
@@ -19,10 +18,10 @@ export const createRazorpayOrder = async (req, res) => {
       });
     }
 
-    // Lock the cart for 12 minutes
+    // Locks the cart for 3 minutes
     await Cart.findOneAndUpdate(
       { user: req.user._id },
-      { checkoutLockedUntil: new Date(Date.now() + 12 * 60 * 1000) },
+      { checkoutLockedUntil: new Date(Date.now() + 3 * 60 * 1000) },
     );
 
     const { products, couponCode } = req.body;
@@ -164,5 +163,25 @@ export const verifyRazorpayPayment = async (req, res) => {
     res
       .status(500)
       .json({ error: "Payment verification failed", details: error.message });
+  }
+};
+
+export const cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    // Clears the checkout lock
+    await Cart.findOneAndUpdate(
+      { user: req.user._id },
+      { checkoutLockedUntil: null },
+    );
+
+    if (orderId) {
+      await Order.findByIdAndUpdate(orderId, { status: "cancelled" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to cancel order" });
   }
 };

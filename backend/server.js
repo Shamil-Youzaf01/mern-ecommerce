@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import cors from "cors";
 import helmet from "helmet";
-import fs from "fs"; // for debug
+import fs from "fs";
 
 // Rate Limiters
 import { globalLimiter, paymentLimiter } from "./middleware/rateLimiter.js";
@@ -19,12 +19,15 @@ import analyticsRoute from "./routes/analytics.route.js";
 import orderRoute from "./routes/order.route.js";
 import { connectDB } from "./lib/db.js";
 import cloudinary from "./lib/cloudinary.js";
+import { protectRoute } from "./middleware/auth.middleware.js";
 
 //config
 dotenv.config();
 
 const app = express();
 const __dirname = path.resolve();
+
+app.set("trust proxy", 1);
 
 app.use(
   cors({
@@ -56,7 +59,12 @@ app.use(
 );
 
 // Global rate limiting
-app.use(globalLimiter);
+app.use((req, res, next) => {
+  const excludedPaths = ["/payments", "/cart", "/orders"];
+  const isExcluded = excludedPaths.some((path) => req.path.startsWith(path));
+  if (isExcluded) return next();
+  globalLimiter(req, res, next);
+});
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -91,7 +99,7 @@ app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoute);
 app.use("/coupon", couponRoutes);
-app.use("/payments", paymentLimiter, paymentRoutes);
+app.use("/payments", protectRoute, paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
 // Serve frontend static files in production

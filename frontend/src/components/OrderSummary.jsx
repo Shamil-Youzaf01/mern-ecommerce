@@ -9,8 +9,6 @@ import axios from "../lib/axios";
 import ShippingAddressForm from "./ShippingAddressForm";
 
 const OrderSummary = () => {
-  console.log("OrderSummary: Component rendered");
-
   const {
     total,
     subtotal,
@@ -36,13 +34,7 @@ const OrderSummary = () => {
   const couponCodeRef = useRef(null);
 
   useEffect(() => {
-    console.log("OrderSummary: Component mounted");
-    return () => console.log("OrderSummary: Component unmounted");
-  }, []);
-
-  useEffect(() => {
-    console.log("OrderSummary: initCartSync effect running");
-    initCartSync(); // ← starts listening to other tabs
+    initCartSync();
   }, [initCartSync]);
 
   useEffect(() => {
@@ -81,10 +73,6 @@ const OrderSummary = () => {
   const hasAddress = savedAddress && savedAddress.street;
 
   const handlePayment = async () => {
-    console.log(
-      "OrderSummary: handlePayment called, isProcessingPayment:",
-      isProcessingPayment,
-    );
     if (isProcessingPayment) return;
 
     if (!hasAddress) {
@@ -92,14 +80,12 @@ const OrderSummary = () => {
       return;
     }
     setIsProcessingPayment(true);
-    console.log("OrderSummary: Starting payment process");
     try {
       if (coupon) {
         useCartStore.setState({ coupon: null, isCouponApplied: false });
       }
       await loadRazorpayScript();
 
-      console.log("OrderSummary: Sending create-order request");
       const res = await axios.post("/payments/create-order", {
         products: cart,
         couponCode: isCouponApplied ? coupon?.code : null,
@@ -146,9 +132,18 @@ const OrderSummary = () => {
         },
         modal: {
           ondismiss: async () => {
-            window.location.href = "/cancel";
+            try {
+              await axios.post("/payments/cancel-order", {
+                orderId: mongoOrderId,
+              });
+            } catch (e) {
+              console.error("Failed to clear checkout lock:", e);
+            } finally {
+              window.location.href = "/cancel";
+            }
           },
         },
+
         prefill: {
           name: user?.name || "",
           email: user?.email || "",
@@ -161,8 +156,13 @@ const OrderSummary = () => {
 
       const razorpay = new window.Razorpay(options);
 
-      razorpay.on("payment.failed", (response) => {
+      razorpay.on("payment.failed", async (response) => {
         console.error("Payment failed:", response.error);
+        try {
+          await axios.post("/payments/cancel-order", { orderId: mongoOrderId });
+        } catch (e) {
+          console.error("Failed to clear lock:", e);
+        }
         alert(`Payment failed: ${response.error.description}`);
       });
 
