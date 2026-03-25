@@ -127,6 +127,10 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
+        <p className="mt-8 text-center text-sm text-gray-400">
+          Super Admin : admin@orbit.com <br />
+          Password : admin@123{" "}
+        </p>
       </motion.div>
     </div>
   );
