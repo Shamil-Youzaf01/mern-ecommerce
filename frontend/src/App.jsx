@@ -22,24 +22,10 @@ function App() {
   const { user, checkingAuth } = useUserStore();
   const { getCartItems } = useCartStore();
 
-  // 1. Fetch CSRF token (for cross-domain Render)
-  // Fix - wait for CSRF token first
-  //useEffect(() => {
-  //const fetchCsrf = async () => {
-  //  try {
-  //    await axios.get("/csrf-token");
-  //  } catch (error) {
-  //  console.error("Failed to fetch CSRF token:", error);
-  // }
-  //  };
-  // fetchCsrf();
-  // }, []);
-
   useEffect(() => {
     useUserStore.getState().checkAuth();
   }, []);
 
-  // 2. Load cart when user is logged in
   useEffect(() => {
     if (user) getCartItems();
   }, [getCartItems, user]);
