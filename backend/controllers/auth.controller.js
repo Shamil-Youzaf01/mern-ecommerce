@@ -3,8 +3,10 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 
+// Google OAuth2 Clinet
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Generates access and refresh tokens for a user
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "15m",
@@ -17,15 +19,17 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+// Stores refresh token in Redis with 7-day expiration
 const storeRefreshToken = async (userId, refreshToken) => {
   await redis.set(
     `refresh_token:${userId}`,
     refreshToken,
     "EX",
-    7 * 24 * 60 * 60,
+    7 * 24 * 60 * 60, // 7 days
   );
 };
 
+// Set HTTP-only cookies for access and refresh tokens
 const setCookies = (res, accessToken, refreshToken) => {
   const isProd = process.env.NODE_ENV === "production";
   res.cookie("accessToken", accessToken, {
@@ -43,6 +47,8 @@ const setCookies = (res, accessToken, refreshToken) => {
   });
 };
 
+// Auth Controllers
+// Registers a new user with email and password
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
   try {
@@ -76,6 +82,7 @@ export const signup = async (req, res) => {
   }
 };
 
+//Login user with email and password
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -102,6 +109,7 @@ export const login = async (req, res) => {
   }
 };
 
+// Logout user clears refresh token and clear cookies
 export const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -135,6 +143,7 @@ export const logout = async (req, res) => {
   }
 };
 
+// Refresh access token using valid refresh token
 export const refreshToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -170,6 +179,7 @@ export const refreshToken = async (req, res) => {
   }
 };
 
+// Get current user profile
 export const getProfile = async (req, res) => {
   try {
     res.json(req.user);
@@ -178,6 +188,7 @@ export const getProfile = async (req, res) => {
   }
 };
 
+// Google OAuth authentication
 export const googleAuth = async (req, res) => {
   try {
     const { credential } = req.body;
@@ -228,6 +239,8 @@ export const googleAuth = async (req, res) => {
   }
 };
 
+// Admin / User Management
+// Get all users (Admin only)
 export const getAllUsers = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -253,6 +266,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// Delete a user by ID (Admin only)
 export const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
@@ -264,6 +278,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+// Create a new admin user
 export const createAdmin = async (req, res) => {
   try {
     const { email, password, name, role } = req.body;
@@ -291,6 +306,7 @@ export const createAdmin = async (req, res) => {
   }
 };
 
+// Update user address
 export const updateAddress = async (req, res) => {
   try {
     const { street, city, state, zipCode, country, phone } = req.body;
@@ -307,6 +323,7 @@ export const updateAddress = async (req, res) => {
   }
 };
 
+// Delete user address
 export const deleteAddress = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(

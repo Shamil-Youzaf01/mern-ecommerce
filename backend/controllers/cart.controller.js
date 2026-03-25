@@ -1,6 +1,7 @@
 import Product from "../models/product.model.js";
 import Cart from "../models/cart.model.js";
 
+// Get all products in the user's cart
 export const getCartProducts = async (req, res) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id });
@@ -31,6 +32,7 @@ export const getCartProducts = async (req, res) => {
   }
 };
 
+// Add to cart
 export const addToCart = async (req, res) => {
   try {
     const { productId } = req.body;
@@ -51,13 +53,14 @@ export const addToCart = async (req, res) => {
     }
 
     await cart.save();
-    res.json({ success: true }); // ← lightweight response
+    res.json({ success: true });
   } catch (error) {
     console.log("Error in addToCart controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+// Remove Products from cart
 export const removeAllFromCart = async (req, res) => {
   try {
     const { productId } = req.body || {};
@@ -82,6 +85,7 @@ export const removeAllFromCart = async (req, res) => {
   }
 };
 
+// Update the cart product quantity
 export const updateQuantity = async (req, res) => {
   try {
     const { id: productId } = req.params;

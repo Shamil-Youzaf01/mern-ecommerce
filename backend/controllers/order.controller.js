@@ -1,5 +1,6 @@
 import Order from "../models/order.model.js";
 
+// Get all orders (Admin only)
 export const getAllOrders = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -26,6 +27,7 @@ export const getAllOrders = async (req, res) => {
   }
 };
 
+// Update order status (Admin only)
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -54,6 +56,7 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
+// Delete order (Admin only)
 export const deleteOrder = async (req, res) => {
   try {
     await Order.findByIdAndDelete(req.params.orderId);
@@ -63,6 +66,7 @@ export const deleteOrder = async (req, res) => {
   }
 };
 
+// Order list user profile (Users)
 export const getUserOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id })

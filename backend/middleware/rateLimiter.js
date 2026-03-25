@@ -7,6 +7,7 @@ const redis = new Redis(process.env.REDIS_URL);
 
 const keyGenerator = (req) => req.user?._id?.toString() || req.ip;
 
+// Redis limiter
 const createLimiter = (options) =>
   rateLimit({
     store: new RedisStore({
@@ -22,18 +23,21 @@ const createLimiter = (options) =>
     ...options,
   });
 
+// Global limiter
 export const globalLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   max: 300,
   message: "Too many requests, please slow down.",
 });
 
+// Auth limiter
 export const authLimiter = createLimiter({
   windowMs: 5 * 60 * 1000,
   max: 120,
   message: "Too many login/signup attempts. Try again later.",
 });
 
+// Payment limiter
 export const paymentLimiter = createLimiter({
   windowMs: 10 * 60 * 1000,
   max: 20,

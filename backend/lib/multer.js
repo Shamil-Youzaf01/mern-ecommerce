@@ -1,6 +1,5 @@
 import multer from "multer";
 
-// NO MORE CloudinaryStorage!
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,

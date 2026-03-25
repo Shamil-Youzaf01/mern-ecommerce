@@ -1,6 +1,7 @@
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 
+// Get user's current available coupon
 export const getCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findOne({
@@ -14,6 +15,7 @@ export const getCoupon = async (req, res) => {
   }
 };
 
+// Create new coupon
 export const createNewCoupon = async (userId) => {
   try {
     await Coupon.findOneAndUpdate({ userId }, { isActive: false });
@@ -31,6 +33,7 @@ export const createNewCoupon = async (userId) => {
   }
 };
 
+// Coupon validation
 export const validateCoupon = async (req, res) => {
   try {
     const { code } = req.body;

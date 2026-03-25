@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 export const connectDB = async () => {
-  // Support both MONGO_URI and MONGODB_URI environment variables
   const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
   if (!mongoUri) {

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
+// Protect route
 export const protectRoute = async (req, res, next) => {
   try {
     const accessToken = req.cookies.accessToken;
@@ -38,6 +39,7 @@ export const protectRoute = async (req, res, next) => {
   }
 };
 
+// Admin Route
 export const adminRoute = (req, res, next) => {
   if (
     req.user &&
@@ -46,13 +48,5 @@ export const adminRoute = (req, res, next) => {
     next();
   } else {
     return res.status(403).json({ message: "Access denied - Admin only" });
-  }
-};
-
-export const superadminRoute = (req, res, next) => {
-  if (req.user && req.user.role === "superadmin") {
-    next();
-  } else {
-    return res.status(403).json({ message: "Access denied - Superadmin only" });
   }
 };

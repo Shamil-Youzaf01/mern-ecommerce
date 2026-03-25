@@ -6,7 +6,6 @@ import cors from "cors";
 import helmet from "helmet";
 import fs from "fs";
 
-// Rate Limiters
 import { globalLimiter, paymentLimiter } from "./middleware/rateLimiter.js";
 
 // Routes
@@ -17,18 +16,20 @@ import couponRoutes from "./routes/coupon.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoute from "./routes/analytics.route.js";
 import orderRoute from "./routes/order.route.js";
+
 import { connectDB } from "./lib/db.js";
 import cloudinary from "./lib/cloudinary.js";
 import { protectRoute } from "./middleware/auth.middleware.js";
 
-//config
 dotenv.config();
 
 const app = express();
 const __dirname = path.resolve();
 
+// Trust proxy (for Render)
 app.set("trust proxy", 1);
 
+// CORS Configuration
 app.use(
   cors({
     origin: [
@@ -40,6 +41,7 @@ app.use(
   }),
 );
 
+// Security Headers with Helmet
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -58,69 +60,58 @@ app.use(
   }),
 );
 
-// Global rate limiting
+// Global Rate Limiting
+const excludedRateLimitPaths = ["/payments", "/cart", "/orders"];
+
 app.use((req, res, next) => {
-  const excludedPaths = ["/payments", "/cart", "/orders"];
-  const isExcluded = excludedPaths.some((path) => req.path.startsWith(path));
+  const isExcluded = excludedRateLimitPaths.some((path) =>
+    req.path.startsWith(path),
+  );
+
   if (isExcluded) return next();
+
   globalLimiter(req, res, next);
 });
 
+// Body Parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  console.log({
-    time: new Date().toISOString(),
-    ip: req.ip,
-    method: req.method,
-    url: req.originalUrl,
-  });
-  next();
-});
-
-// Static files
+// Serve uploaded files statically
 app.use("/uploads", express.static("uploads"));
 
-// Mount auth routes
 app.use("/auth", authRoutes);
-
-// Test endpoint for cloudinary
-app.get("/test-cloudinary", (req, res) => {
-  res.json({
-    configured: !!cloudinary.config().cloud_name,
-    cloudName: cloudinary.config().cloud_name,
-  });
-});
-
-// Other routes (no limiter on products to avoid 429 on featured)
 app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoute);
 app.use("/coupon", couponRoutes);
+
+// Protected + Rate Limited Payment Routes
 app.use("/payments", protectRoute, paymentLimiter, paymentRoutes);
 app.use("/analytics", analyticsRoute);
 
-// Serve frontend static files in production
-// Try multiple possible locations for the frontend build output
-const possiblePaths = [
+const possibleFrontendPaths = [
   path.join(__dirname, "frontend", "dist"),
   path.join(__dirname, "dist"),
   path.join(process.cwd(), "frontend", "dist"),
 ];
 
 let frontendPath = null;
-for (const p of possiblePaths) {
+
+for (const p of possibleFrontendPaths) {
   if (fs.existsSync(p)) {
     frontendPath = p;
-    console.log(`Frontend dist found at: ${p}`);
+    console.log(`✅ Frontend dist found at: ${p}`);
     break;
   }
 }
 
 if (!frontendPath) {
-  console.log("Frontend dist NOT found. Searched paths:", possiblePaths);
+  console.warn(
+    "⚠️  Frontend dist folder NOT found. Searched paths:",
+    possibleFrontendPaths,
+  );
 }
 
 if (frontendPath) {
@@ -136,7 +127,7 @@ if (frontendPath) {
     }),
   );
 
-  // Catch-all for SPA routing
+  // SPA Fallback
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"), (err) => {
       if (err) {
@@ -147,13 +138,18 @@ if (frontendPath) {
   });
 }
 
+// Start Server
+
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+
   try {
     await connectDB();
-    console.log("MongoDB connected");
+    console.log("✅ MongoDB connected successfully");
   } catch (error) {
-    console.error("MongoDB connection failed:", error.message);
+    console.error("❌ MongoDB connection failed:", error.message);
+    process.exit(1); // Exit process if DB fails
   }
 });

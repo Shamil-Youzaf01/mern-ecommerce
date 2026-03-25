@@ -2,7 +2,7 @@ import cloudinary from "../lib/cloudinary.js";
 import { redis } from "../lib/redis.js";
 import Product from "../models/product.model.js";
 
-// Helper to upload buffer to Cloudinary (required for memory storage)
+// Helper function to upload buffer to Cloudinary (required for memory storage)
 const uploadToCloudinary = (buffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -23,6 +23,7 @@ const uploadToCloudinary = (buffer) => {
   });
 };
 
+// Get all products
 export const getAllProducts = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -47,6 +48,7 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
+// Fetaured products
 export const getFeaturedProducts = async (req, res) => {
   try {
     let featuredProducts = await redis.get("featured_products");
@@ -68,6 +70,7 @@ export const getFeaturedProducts = async (req, res) => {
   }
 };
 
+// Create prodcuts (Admin only)
 export const createProduct = async (req, res) => {
   try {
     const imageUrls = [];
@@ -105,6 +108,7 @@ export const createProduct = async (req, res) => {
   }
 };
 
+// Delete product (Admin only)
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -131,6 +135,7 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
+// Recommended products
 export const getRecommendedProducts = async (req, res) => {
   try {
     const products = await Product.aggregate([
@@ -158,6 +163,7 @@ export const getRecommendedProducts = async (req, res) => {
   }
 };
 
+// Products by category
 export const getProductsByCategory = async (req, res) => {
   const { category } = req.params;
   const page = Number(req.query.page) || 1;
@@ -183,6 +189,7 @@ export const getProductsByCategory = async (req, res) => {
   }
 };
 
+// Featured products toggle button (Admin only)
 export const toggleFeaturedProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -200,6 +207,7 @@ export const toggleFeaturedProduct = async (req, res) => {
   }
 };
 
+// Fetaured products redis config
 async function updateFeaturedProductsCache() {
   try {
     const featuredProducts = await Product.find({ isFeatured: true }).lean();
@@ -212,6 +220,7 @@ async function updateFeaturedProductsCache() {
   }
 }
 
+// Product search
 export const searchProducts = async (req, res) => {
   try {
     const {
@@ -273,6 +282,7 @@ export const searchProducts = async (req, res) => {
   }
 };
 
+// Product by id
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -285,6 +295,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
+// Product update
 export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);

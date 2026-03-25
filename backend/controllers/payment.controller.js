@@ -5,6 +5,7 @@ import Cart from "../models/cart.model.js";
 import { razorpay } from "../lib/razorpay.js";
 import { createNewCoupon } from "./coupon.controller.js";
 
+// Razorpay Order creation
 export const createRazorpayOrder = async (req, res) => {
   try {
     const existingCart = await Cart.findOne({ user: req.user._id });
@@ -91,6 +92,7 @@ export const createRazorpayOrder = async (req, res) => {
   }
 };
 
+// Order Verfication with razorpay signature
 export const verifyRazorpayPayment = async (req, res) => {
   try {
     const {
@@ -166,18 +168,34 @@ export const verifyRazorpayPayment = async (req, res) => {
   }
 };
 
+// Cancel order
 export const cancelOrder = async (req, res) => {
   try {
     const { orderId } = req.body;
 
-    // Clears the checkout lock
     await Cart.findOneAndUpdate(
       { user: req.user._id },
       { checkoutLockedUntil: null },
     );
 
     if (orderId) {
-      await Order.findByIdAndUpdate(orderId, { status: "cancelled" });
+      const order = await Order.findOne({
+        _id: orderId,
+        user: req.user._id,
+      });
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      if (order.status === "paid") {
+        return res
+          .status(400)
+          .json({ error: "Cannot cancel a completed payment" });
+      }
+
+      order.status = "cancelled";
+      await order.save();
     }
 
     res.json({ success: true });

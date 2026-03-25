@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+// User model
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: [true, "Name is required"] },
