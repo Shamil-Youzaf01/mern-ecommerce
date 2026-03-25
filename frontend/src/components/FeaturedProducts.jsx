@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCartStore } from "../stores/useCartStore";
-import { Link } from "react-router-dom";
+import { useUserStore } from "../stores/useUserStore";
+import { Link, useNavigate } from "react-router-dom";
 
 const FeaturedProducts = ({ featuredProducts }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);
-
   const { addToCart } = useCartStore();
+  const { user } = useUserStore();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -78,6 +81,10 @@ const FeaturedProducts = ({ featuredProducts }) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
+                          if (!user) {
+                            navigate("/signup");
+                            return;
+                          }
                           addToCart(product);
                         }}
                         className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-4 rounded transition-colors duration-300 
