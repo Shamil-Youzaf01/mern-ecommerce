@@ -115,7 +115,6 @@ export const useCartStore = create((set, get) => ({
     set({ subtotal, total });
   },
 
-  // AUTO SYNC OTHER TABS
   initCartSync: () => {
     cartChannel.onmessage = (event) => {
       if (

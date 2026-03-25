@@ -69,10 +69,6 @@ export const getFeaturedProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-  console.log("=== CREATE PRODUCT DEBUG ===");
-  console.log("Body:", req.body);
-  console.log("Files received:", req.files?.length || 0);
-
   try {
     const imageUrls = [];
 
@@ -84,7 +80,7 @@ export const createProduct = async (req, res) => {
         );
         const imageUrl = await uploadToCloudinary(file.buffer);
         imageUrls.push(imageUrl);
-        console.log(`✅ Uploaded: ${imageUrl}`);
+        console.log(`Uploaded: ${imageUrl}`);
       }
     } else {
       console.log("No images — creating text-only product");
@@ -95,7 +91,7 @@ export const createProduct = async (req, res) => {
       description: req.body.description,
       price: parseFloat(req.body.price) || 0,
       category: req.body.category,
-      images: imageUrls, // always an array (empty = no images)
+      images: imageUrls,
     });
 
     console.log("✅ Product created! ID:", product._id);

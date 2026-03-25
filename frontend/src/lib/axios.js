@@ -5,13 +5,6 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-axiosInstance.interceptors.request.use(
-  (config) => {
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
-
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
