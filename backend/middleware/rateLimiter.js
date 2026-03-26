@@ -12,8 +12,6 @@ const createLimiter = (options) =>
   rateLimit({
     store: new RedisStore({
       sendCommand: (...args) => {
-        // Log every rate limit check
-        console.log(`[RateLimit] ${args[0].toUpperCase()}`, args.slice(1));
         return redis.call(...args);
       },
     }),

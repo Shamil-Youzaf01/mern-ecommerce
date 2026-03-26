@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "../stores/useCartStore";
 import { useUserStore } from "../stores/useUserStore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MoveRight, MapPin, Edit, Plus, Trash2 } from "lucide-react";
 import axios from "../lib/axios";
 import ShippingAddressForm from "./ShippingAddressForm";
@@ -32,6 +32,7 @@ const OrderSummary = () => {
   const discountPercentage = coupon?.discountPercentage || 0;
 
   const couponCodeRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     initCartSync();
@@ -120,10 +121,10 @@ const OrderSummary = () => {
             if (verifyRes.data.message === "Payment verified successfully") {
               localStorage.setItem("lastOrderId", verifyRes.data.orderId);
               useCartStore.setState({ coupon: null, isCouponApplied: false });
-              await useCartStore.getState().getMyCoupon(); // fetch the brand new coupon
+              await useCartStore.getState().getMyCoupon();
               clearCart();
               await axios.delete("/cart", { data: { productId: undefined } });
-              window.location.href = "/success";
+              navigate("/success");
             }
           } catch (error) {
             console.error("Verification error:", error);
@@ -139,7 +140,8 @@ const OrderSummary = () => {
             } catch (e) {
               console.error("Failed to clear checkout lock:", e);
             } finally {
-              window.location.href = "/cancel";
+              setIsProcessingPayment(false);
+              navigate("/cancel");
             }
           },
         },
@@ -174,7 +176,6 @@ const OrderSummary = () => {
       } else {
         alert("Payment failed. Please try again.");
       }
-    } finally {
       setIsProcessingPayment(false);
     }
   };

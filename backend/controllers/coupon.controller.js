@@ -18,7 +18,7 @@ export const getCoupon = async (req, res) => {
 // Create new coupon
 export const createNewCoupon = async (userId) => {
   try {
-    await Coupon.findOneAndUpdate({ userId }, { isActive: false });
+    await Coupon.findOneAndUpdate({ userId });
 
     const newCoupon = new Coupon({
       code: "GIFT" + Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -37,30 +37,41 @@ export const createNewCoupon = async (userId) => {
 export const validateCoupon = async (req, res) => {
   try {
     const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ message: "Coupon code is required" });
+    }
+
+    const coupon = await Coupon.findOne({
+      code: code.trim().toUpperCase(),
+      userId: req.user._id,
+      isActive: true,
+      expirationDate: { $gt: new Date() },
+    });
+
+    if (!coupon) {
+      const expiredCoupon = await Coupon.findOne({
+        code: code.trim().toUpperCase(),
+        userId: req.user._id,
+      });
+
+      if (expiredCoupon && expiredCoupon.expirationDate < new Date()) {
+        expiredCoupon.isActive = false;
+        await expiredCoupon.save();
+        return res.status(400).json({ message: "Coupon has expired" });
+      }
+
+      return res.status(400).json({ message: "Coupon not found" });
+    }
+
     const existingOrder = await Order.findOne({
       user: req.user._id,
-      couponCode: code,
+      couponCode: coupon.code,
       status: "paid",
     });
 
     if (existingOrder) {
       return res.status(400).json({ message: "Coupon has already been used" });
-    }
-
-    const coupon = await Coupon.findOne({
-      code: code,
-      userId: req.user._id,
-      isActive: true,
-    });
-
-    if (!coupon) {
-      return res.status(400).json({ message: "Coupon not found" });
-    }
-
-    if (coupon.expirationDate < new Date()) {
-      coupon.isActive = false;
-      await coupon.save();
-      return res.status(404).json({ message: "Coupon expired" });
     }
 
     res.json({
@@ -73,7 +84,7 @@ export const validateCoupon = async (req, res) => {
       userId: coupon.userId,
     });
   } catch (error) {
-    console.log("Error in validateCoupon controller", error.message);
+    console.error("Error in validateCoupon controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
