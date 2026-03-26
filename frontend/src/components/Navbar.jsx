@@ -21,7 +21,7 @@ const Navbar = () => {
 
   const isHomePage = location.pathname === "/";
   const isCategoryPage = location.pathname.startsWith("/category");
-  const showSearchBar = user && (isHomePage || isCategoryPage);
+  const showSearchBar = isHomePage || isCategoryPage;
 
   const getCategoryFromUrl = () => {
     if (isCategoryPage) {

@@ -82,10 +82,15 @@ export const useCartStore = create((set, get) => ({
   },
 
   removeFromCart: async (productId) => {
-    await axios.delete(`/cart`, { data: { productId } });
-    set((prev) => ({ cart: prev.cart.filter((i) => i._id !== productId) }));
-    get().calculateTotals();
-    cartChannel.postMessage({ type: "CART_UPDATED" });
+    try {
+      await axios.delete(`/cart`, { data: { productId } });
+      set((prev) => ({ cart: prev.cart.filter((i) => i._id !== productId) }));
+      get().calculateTotals();
+      cartChannel.postMessage({ type: "CART_UPDATED" });
+      toast.success("Item removed from cart");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove item");
+    }
   },
 
   updateQuantity: async (productId, quantity) => {

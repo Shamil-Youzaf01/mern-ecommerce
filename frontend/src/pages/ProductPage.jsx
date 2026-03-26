@@ -45,7 +45,6 @@ const ProductPage = () => {
       return;
     }
     addToCart(product);
-    toast.success("Added to cart!");
   };
 
   const images = product ? product.images || [product.image] : [];

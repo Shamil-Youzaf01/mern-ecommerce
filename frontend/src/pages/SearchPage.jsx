@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import axios from "axios";
+import axios from "../lib/axios";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ProductCard from "../components/ProductCard";
 
@@ -36,7 +36,7 @@ const SearchPage = () => {
     // Fetch unique categories once
     const fetchCategories = async () => {
       try {
-        const { data } = await axios.get("/products");
+        const { data } = await axios.get("/products/search?q=");
         const uniqueCats = [
           ...new Set(data.products.map((p) => p.category)),
         ].sort();
@@ -73,18 +73,7 @@ const SearchPage = () => {
     };
 
     fetchProducts();
-    // Reset page to 1 on filter change
-    searchParams.set("page", "1");
-    setSearchParams(searchParams);
-  }, [
-    query,
-    category,
-    minPrice,
-    maxPrice,
-    sort,
-    searchParams,
-    setSearchParams,
-  ]);
+  }, [query, category, minPrice, maxPrice, sort]);
 
   // Apply filters - updates URL which triggers useEffect
   const applyFilters = () => {
@@ -170,7 +159,7 @@ const SearchPage = () => {
 
           {/* Price Range */}
           <div className="flex items-center gap-2 bg-gray-700 rounded-full px-3 py-2 border border-gray-600">
-            <span className="text-emerald-400 text-sm">$</span>
+            <span className="text-emerald-400 text-sm">₹</span>
             <input
               type="number"
               value={localMinPrice}
